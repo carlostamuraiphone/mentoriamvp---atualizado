@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -14,436 +13,283 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box
-    }
-
-    html,
-    body,
-    #root {
-      height: 100%
-    }
-
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: #000;
-      color: #fff;
-      -webkit-font-smoothing: antialiased;
-      overscroll-behavior: none
-    }
-
-    input,
-    select,
-    textarea,
-    button {
-      font-family: inherit
-    }
-
-    ::-webkit-scrollbar {
-      width: 4px
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #222;
-      border-radius: 3px
-    }
-
-    @keyframes slideIn {
-      from {
-        transform: translateX(30px);
-        opacity: 0
-      }
-
-      to {
-        transform: translateX(0);
-        opacity: 1
-      }
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(8px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
-    }
-
-    @keyframes modalIn {
-      from {
-        transform: scale(.95);
-        opacity: 0
-      }
-
-      to {
-        transform: scale(1);
-        opacity: 1
-      }
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg)
-      }
-    }
-
-    select option {
-      background: #111;
-      color: #fff
-    }
-
-    @media(max-width:768px) {
-      ::-webkit-scrollbar {
-        display: none
-      }
-
-      body {
-        -webkit-tap-highlight-color: transparent
-      }
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body,#root{height:100%}
+    body{font-family:'DM Sans',sans-serif;background:#000;color:#fff;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+    input,select,textarea,button{font-family:inherit}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#222;border-radius:3px}
+    @keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes modalIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    select option{background:#111;color:#fff}
+    @media(max-width:768px){::-webkit-scrollbar{display:none}body{-webkit-tap-highlight-color:transparent}}
   </style>
 </head>
-
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useCallback, useMemo, useRef } = React;
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useCallback,useMemo,useRef}=React;
 
-    /* ═══ LOGO ═══ */
-    const LOGO_SRC = "data:image/png;base64,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";
+/* ── LOGO ── */
+const LOGO_SRC="data:image/png;base64,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";
 
-    /* ═══ STORAGE E SUPABASE ═══ */
-    const SK = { STUDENTS: "mentoria_students", MODULES: "mentoria_modules", PROGRESS: "mentoria_progress", ADMIN: "mentoria_admin", EVENTS: "mentoria_events" };
-    function ld(k, fb) { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb; } catch { return fb; } }
-    function sv(k, d) { try { localStorage.setItem(k, JSON.stringify(d)); } catch (e) { console.error(e); } }
-    const DEFAULT_ADMIN = { email: "admin@mentoriamvp.com", password: "admin123" };
-    const gid = () => Math.random().toString(36).substr(2, 9);
+/* ── SUPABASE ── */
+const SUPA = window.supabase.createClient(
+  "https://nmmxjbojochvkhshyxvy.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tbXhqYm9qb2Nodmtoc2h5eHZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NDE4ODQsImV4cCI6MjA5MDAxNzg4NH0.wtnBNSpvmf3HyJAW887DmK8r_xw6hYqHCqiGuYycHXo"
+);
+const _cache = {};
+async function loadAll() {
+  const { data } = await SUPA.from("app_data").select("*");
+  if (data) data.forEach(r => _cache[r.key] = r.value);
+}
+const SK={STUDENTS:"mentoria_students",MODULES:"mentoria_modules",PROGRESS:"mentoria_progress",ADMIN:"mentoria_admin",EVENTS:"mentoria_events"};
+function ld(k,fb){return _cache[k]!==undefined?_cache[k]:fb;}
+function sv(k,d){_cache[k]=d;SUPA.from("app_data").upsert({key:k,value:d},{onConflict:"key"}).catch(console.error);}
+const DEFAULT_ADMIN={email:"admin@mentoriamvp.com",password:"admin123"};
+const gid=()=>Math.random().toString(36).substr(2,9);
 
-    const SUPABASE_URL = "SUA_URL_SUPABASE";
-    const SUPABASE_KEY = "SUA_CHAVE_ANON_SUPABASE";
-    const supabase = (window.supabase && SUPABASE_URL.startsWith("http")) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+/* ── HOOKS ── */
+function useIsMobile(){const[m,s]=useState(window.innerWidth<=768);useEffect(()=>{const h=()=>s(window.innerWidth<=768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);return m;}
 
-    const api = {
-      getStudents: async () => { if (!supabase) return ld(SK.STUDENTS, []); const { data, error } = await supabase.from('students').select('*'); return (!error && data?.length > 0) ? data : ld(SK.STUDENTS, []); },
-      upsertStudent: async (student) => { if (!supabase) { const sts = ld(SK.STUDENTS, []); const idx = sts.findIndex(s => s.id === student.id); if (idx >= 0) sts[idx] = student; else sts.push(student); sv(SK.STUDENTS, sts); return; } await supabase.from('students').upsert(student); },
-      deleteStudent: async (id) => { if (!supabase) { sv(SK.STUDENTS, ld(SK.STUDENTS, []).filter(s => s.id !== id)); return; } await supabase.from('students').delete().eq('id', id); },
-      getModules: async () => { if (!supabase) return ld(SK.MODULES, []); const { data, error } = await supabase.from('modules').select('*'); return (!error && data?.length > 0) ? data : ld(SK.MODULES, []); },
-      upsertModule: async (modConfig) => { if (!supabase) { const mods = ld(SK.MODULES, []); const idx = mods.findIndex(m => m.id === modConfig.id); if (idx >= 0) mods[idx] = modConfig; else mods.push(modConfig); sv(SK.MODULES, mods); return; } await supabase.from('modules').upsert(modConfig); },
-      deleteModule: async (id) => { if (!supabase) { sv(SK.MODULES, ld(SK.MODULES, []).filter(m => m.id !== id)); return; } await supabase.from('modules').delete().eq('id', id); },
-      getEvents: async () => { if (!supabase) return ld(SK.EVENTS, []); const { data, error } = await supabase.from('events').select('*'); return (!error && data?.length > 0) ? data : ld(SK.EVENTS, []); },
-      upsertEvent: async (evt) => { if (!supabase) { const evts = ld(SK.EVENTS, []); const idx = evts.findIndex(e => e.id === evt.id); if (idx >= 0) evts[idx] = evt; else evts.push(evt); sv(SK.EVENTS, evts); return; } await supabase.from('events').upsert(evt); },
-      deleteEvent: async (id) => { if (!supabase) { sv(SK.EVENTS, ld(SK.EVENTS, []).filter(e => e.id !== id)); return; } await supabase.from('events').delete().eq('id', id); },
-      getProgress: async () => { if (!supabase) return ld(SK.PROGRESS, {}); const { data, error } = await supabase.from('progress').select('*'); if (!error && data?.length > 0) { const p = {}; data.forEach(r => { if (!p[r.student_id]) p[r.student_id] = {}; p[r.student_id][r.lesson_id] = r.done; }); return p; } return ld(SK.PROGRESS, {}); },
-      saveProgress: async (studentId, lessonId, done) => { if (!supabase) { const p = ld(SK.PROGRESS, {}); if (!p[studentId]) p[studentId] = {}; p[studentId][lessonId] = done; sv(SK.PROGRESS, p); return; } await supabase.from('progress').upsert({ student_id: studentId, lesson_id: lessonId, done }, { onConflict: 'student_id, lesson_id' }); }
-    };
+/* ── LOGO COMPONENT ── */
+function Logo({size=32}){return <img src={LOGO_SRC} alt="MVP Mentoria" style={{width:size,height:size,borderRadius:6,objectFit:"cover"}} />;}
 
-    /* ═══ HOOKS ═══ */
-    function useIsMobile() { const [m, s] = useState(window.innerWidth <= 768); useEffect(() => { const h = () => s(window.innerWidth <= 768); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h); }, []); return m; }
+/* ── ICONS ── */
+const ic=(d)=>({s=20}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>);
+const I={
+  Play:ic(<polygon points="5 3 19 12 5 21 5 3"/>),
+  Users:ic(<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>),
+  Book:ic(<><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></>),
+  Chart:ic(<><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>),
+  Plus:ic(<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>),
+  Trash:({s=16}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>),
+  Edit:({s=16}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>),
+  Logout:ic(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>),
+  Check:({s=16}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>),
+  File:({s=16}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>),
+  Link:({s=16}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>),
+  Eye:()=>(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>),
+  EyeOff:()=>(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>),
+  ChevDown:ic(<polyline points="6 9 12 15 18 9"/>),
+  ChevLeft:ic(<polyline points="15 18 9 12 15 6"/>),
+  X:ic(<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>),
+  Search:ic(<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>),
+  Home:ic(<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>),
+  Video:({s=16}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>),
+  Calendar:ic(<><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>),
+  User:ic(<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>),
+  Clock:({s=14}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>),
+  Paperclip:({s=16}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>),
+  ExtLink:({s=14}={})=>(<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>),
+  Menu:()=>(<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>),
+};
+const months=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-    /* ═══ LOGO COMPONENT ═══ */
-    function Logo({ size = 32 }) { return <img src={LOGO_SRC} alt="MVP Mentoria" style={{ width: size, height: size, borderRadius: 6, objectFit: "cover" }} />; }
+/* ── SHARED UI ── */
+function Toast({message,type="success",onClose}){useEffect(()=>{const t=setTimeout(onClose,3000);return()=>clearTimeout(t);},[onClose]);return(<div style={{position:"fixed",top:20,right:16,left:16,zIndex:9999,background:type==="success"?"#10b981":type==="error"?"#ef4444":"#f59e0b",color:"#fff",padding:"13px 18px",borderRadius:12,fontSize:14,fontWeight:500,boxShadow:"0 8px 32px rgba(0,0,0,0.4)",animation:"slideIn .3s ease",maxWidth:380,margin:"0 auto",textAlign:"center"}}>{message}</div>);}
 
-    /* ═══ ICONS ═══ */
-    const ic = (d) => ({ s = 20 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>);
-    const I = {
-      Play: ic(<polygon points="5 3 19 12 5 21 5 3" />),
-      Users: ic(<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
-      Book: ic(<><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></>),
-      Chart: ic(<><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></>),
-      Plus: ic(<><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>),
-      Trash: ({ s = 16 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>),
-      Edit: ({ s = 16 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>),
-      Logout: ic(<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>),
-      Check: ({ s = 16 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>),
-      File: ({ s = 16 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>),
-      Link: ({ s = 16 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>),
-      Eye: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>),
-      EyeOff: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>),
-      ChevDown: ic(<polyline points="6 9 12 15 18 9" />),
-      ChevLeft: ic(<polyline points="15 18 9 12 15 6" />),
-      X: ic(<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>),
-      Search: ic(<><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></>),
-      Home: ic(<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>),
-      Video: ({ s = 16 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>),
-      Calendar: ic(<><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></>),
-      User: ic(<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>),
-      Clock: ({ s = 14 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>),
-      Paperclip: ({ s = 16 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>),
-      ExtLink: ({ s = 14 } = {}) => (<svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>),
-      Menu: () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></svg>),
-    };
-    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+function Modal({title,onClose,children}){const m=useIsMobile();return(<div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:m?"flex-end":"center",justifyContent:"center",background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)"}} onClick={onClose}><div onClick={e=>e.stopPropagation()} style={{background:"#111",border:"1px solid #222",borderRadius:m?"20px 20px 0 0":16,width:m?"100%":500,maxWidth:"100vw",maxHeight:m?"92vh":"90vh",overflow:"auto",animation:"modalIn .2s ease"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 18px",borderBottom:"1px solid #222",position:"sticky",top:0,background:"#111",zIndex:2}}><h3 style={{margin:0,fontSize:17,fontWeight:600,color:"#fff"}}>{title}</h3><button onClick={onClose} style={{background:"none",border:"none",color:"#666",cursor:"pointer",padding:4}}><I.X/></button></div><div style={{padding:18}}>{children}</div></div></div>);}
 
-    /* ═══ SHARED UI ═══ */
-    function Toast({ message, type = "success", onClose }) { useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]); return (<div style={{ position: "fixed", top: 20, right: 16, left: 16, zIndex: 9999, background: type === "success" ? "#10b981" : type === "error" ? "#ef4444" : "#f59e0b", color: "#fff", padding: "13px 18px", borderRadius: 12, fontSize: 14, fontWeight: 500, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", animation: "slideIn .3s ease", maxWidth: 380, margin: "0 auto", textAlign: "center" }}>{message}</div>); }
+function Input({label,type="text",value,onChange,placeholder,...p}){const[sh,sSh]=useState(false);const ip=type==="password";return(<div style={{marginBottom:13}}>{label&&<label style={{display:"block",marginBottom:4,fontSize:11,color:"#888",fontWeight:500,letterSpacing:".3px",textTransform:"uppercase"}}>{label}</label>}<div style={{position:"relative"}}><input type={ip&&sh?"text":type} value={value} onChange={onChange} placeholder={placeholder} style={{width:"100%",padding:"10px 13px",paddingRight:ip?40:13,background:"#0a0a0a",border:"1px solid #333",borderRadius:10,color:"#fff",fontSize:15,outline:"none",boxSizing:"border-box"}} onFocus={e=>e.target.style.borderColor="#555"} onBlur={e=>e.target.style.borderColor="#333"} {...p}/>{ip&&<button onClick={()=>sSh(!sh)} type="button" style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#666",cursor:"pointer"}}>{sh?<I.EyeOff/>:<I.Eye/>}</button>}</div></div>);}
 
-    function Modal({ title, onClose, children }) { const m = useIsMobile(); return (<div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: m ? "flex-end" : "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }} onClick={onClose}><div onClick={e => e.stopPropagation()} style={{ background: "#111", border: "1px solid #222", borderRadius: m ? "20px 20px 0 0" : 16, width: m ? "100%" : 500, maxWidth: "100vw", maxHeight: m ? "92vh" : "90vh", overflow: "auto", animation: "modalIn .2s ease" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px", borderBottom: "1px solid #222", position: "sticky", top: 0, background: "#111", zIndex: 2 }}><h3 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: "#fff" }}>{title}</h3><button onClick={onClose} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", padding: 4 }}><I.X /></button></div><div style={{ padding: 18 }}>{children}</div></div></div>); }
+function Select({label,value,onChange,options}){return(<div style={{marginBottom:13}}>{label&&<label style={{display:"block",marginBottom:4,fontSize:11,color:"#888",fontWeight:500,letterSpacing:".3px",textTransform:"uppercase"}}>{label}</label>}<select value={value} onChange={onChange} style={{width:"100%",padding:"10px 13px",background:"#0a0a0a",border:"1px solid #333",borderRadius:10,color:"#fff",fontSize:15,outline:"none",boxSizing:"border-box"}}>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></div>);}
 
-    function Input({ label, type = "text", value, onChange, placeholder, ...p }) { const [sh, sSh] = useState(false); const ip = type === "password"; return (<div style={{ marginBottom: 13 }}>{label && <label style={{ display: "block", marginBottom: 4, fontSize: 11, color: "#888", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase" }}>{label}</label>}<div style={{ position: "relative" }}><input type={ip && sh ? "text" : type} value={value} onChange={onChange} placeholder={placeholder} style={{ width: "100%", padding: "10px 13px", paddingRight: ip ? 40 : 13, background: "#0a0a0a", border: "1px solid #333", borderRadius: 10, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }} onFocus={e => e.target.style.borderColor = "#555"} onBlur={e => e.target.style.borderColor = "#333"} {...p} />{ip && <button onClick={() => sSh(!sh)} type="button" style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#666", cursor: "pointer" }}>{sh ? <I.EyeOff /> : <I.Eye />}</button>}</div></div>); }
+function Btn({children,onClick,variant="primary",size="md",style:sx,disabled,...p}){const b={border:"none",cursor:disabled?"not-allowed":"pointer",fontWeight:600,borderRadius:10,display:"inline-flex",alignItems:"center",gap:8,transition:"all .2s",opacity:disabled?.5:1};const sz={sm:{padding:"7px 11px",fontSize:13},md:{padding:"10px 16px",fontSize:14},lg:{padding:"12px 22px",fontSize:15}};const vr={primary:{background:"#fff",color:"#000"},secondary:{background:"#1a1a1a",color:"#fff",border:"1px solid #333"},danger:{background:"#1a0a0a",color:"#ef4444",border:"1px solid #331111"},ghost:{background:"transparent",color:"#888"}};return(<button onClick={onClick} disabled={disabled} style={{...b,...sz[size],...vr[variant],...sx}} {...p}>{children}</button>);}
 
-    function Select({ label, value, onChange, options }) { return (<div style={{ marginBottom: 13 }}>{label && <label style={{ display: "block", marginBottom: 4, fontSize: 11, color: "#888", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase" }}>{label}</label>}<select value={value} onChange={onChange} style={{ width: "100%", padding: "10px 13px", background: "#0a0a0a", border: "1px solid #333", borderRadius: 10, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}>{options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>); }
+function Textarea({label,value,onChange,placeholder,rows=3}){return(<div style={{marginBottom:13}}>{label&&<label style={{display:"block",marginBottom:4,fontSize:11,color:"#888",fontWeight:500,letterSpacing:".3px",textTransform:"uppercase"}}>{label}</label>}<textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows} style={{width:"100%",padding:"10px 13px",background:"#0a0a0a",border:"1px solid #333",borderRadius:10,color:"#fff",fontSize:15,outline:"none",resize:"vertical",boxSizing:"border-box"}}/></div>);}
 
-    function Btn({ children, onClick, variant = "primary", size = "md", style: sx, disabled, ...p }) { const b = { border: "none", cursor: disabled ? "not-allowed" : "pointer", fontWeight: 600, borderRadius: 10, display: "inline-flex", alignItems: "center", gap: 8, transition: "all .2s", opacity: disabled ? .5 : 1 }; const sz = { sm: { padding: "7px 11px", fontSize: 13 }, md: { padding: "10px 16px", fontSize: 14 }, lg: { padding: "12px 22px", fontSize: 15 } }; const vr = { primary: { background: "#fff", color: "#000" }, secondary: { background: "#1a1a1a", color: "#fff", border: "1px solid #333" }, danger: { background: "#1a0a0a", color: "#ef4444", border: "1px solid #331111" }, ghost: { background: "transparent", color: "#888" } }; return (<button onClick={onClick} disabled={disabled} style={{ ...b, ...sz[size], ...vr[variant], ...sx }} {...p}>{children}</button>); }
+function Av({name,size=44}){return(<div style={{width:size,height:size,borderRadius:"50%",background:"#1a1a1a",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:size*.4,flexShrink:0}}>{(name||"?").charAt(0).toUpperCase()}</div>);}
+function Empty({icon,text}){return(<div style={{textAlign:"center",padding:"50px 20px",background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:16}}>{icon}<p style={{color:"#444",fontSize:14,marginTop:12}}>{text}</p></div>);}
 
-    function Textarea({ label, value, onChange, placeholder, rows = 3 }) { return (<div style={{ marginBottom: 13 }}>{label && <label style={{ display: "block", marginBottom: 4, fontSize: 11, color: "#888", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase" }}>{label}</label>}<textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows} style={{ width: "100%", padding: "10px 13px", background: "#0a0a0a", border: "1px solid #333", borderRadius: 10, color: "#fff", fontSize: 15, outline: "none", resize: "vertical", boxSizing: "border-box" }} /></div>); }
+/* ── HELPERS ── */
+function pvUrl(url){if(!url)return null;const yp=[/(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,/(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,/(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,/(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,/(?:youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/];for(const p of yp){const m=url.match(p);if(m)return{type:"youtube",embed:`https://www.youtube.com/embed/${m[1]}`,watch:`https://www.youtube.com/watch?v=${m[1]}`};}const vm=url.match(/vimeo\.com\/(\d+)/);if(vm)return{type:"vimeo",embed:`https://player.vimeo.com/video/${vm[1]}`,watch:`https://vimeo.com/${vm[1]}`};return{type:"other",embed:url,watch:url};}
+function fmtDate(d){if(!d)return"";const[y,m,day]=d.split("-");return`${day}/${m}/${y}`;}
 
-    function Av({ name, size = 44 }) { return (<div style={{ width: size, height: size, borderRadius: "50%", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: size * .4, flexShrink: 0 }}>{(name || "?").charAt(0).toUpperCase()}</div>); }
-    function Empty({ icon, text }) { return (<div style={{ textAlign: "center", padding: "50px 20px", background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 16 }}>{icon}<p style={{ color: "#444", fontSize: 14, marginTop: 12 }}>{text}</p></div>); }
+/* ── VIDEO PLAYER ── */
+function VidPlayer({info,url}){const[loading,setLd]=useState(true);useEffect(()=>setLd(true),[url]);const pn=info?.type==="youtube"?"YouTube":info?.type==="vimeo"?"Vimeo":"Vídeo";return(<div style={{width:"100%",aspectRatio:"16/9",background:"#080808",position:"relative",overflow:"hidden"}}>{loading&&<div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:2,background:"#080808"}}><div style={{width:34,height:34,border:"3px solid #333",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite",marginBottom:12}}/><div style={{color:"#888",fontSize:13}}>Carregando...</div></div>}<iframe key={info?.embed} src={info?.embed} style={{width:"100%",height:"100%",border:"none",position:"absolute",inset:0}} allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;fullscreen" allowFullScreen onLoad={()=>setLd(false)}/><a href={info?.watch||url} target="_blank" rel="noopener noreferrer" style={{position:"absolute",bottom:10,right:10,zIndex:5,padding:"5px 10px",background:"rgba(0,0,0,.75)",borderRadius:8,color:"#fff",fontSize:11,fontWeight:500,textDecoration:"none",display:"flex",alignItems:"center",gap:4,opacity:.6,backdropFilter:"blur(8px)"}}><I.ExtLink/>{pn}</a></div>);}
 
-    /* ═══ HELPERS ═══ */
-    function pvUrl(url) { if (!url) return null; const yp = [/(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/, /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/, /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/, /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/, /(?:youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/]; for (const p of yp) { const m = url.match(p); if (m) return { type: "youtube", embed: `https://www.youtube.com/embed/${m[1]}`, watch: `https://www.youtube.com/watch?v=${m[1]}` }; } const vm = url.match(/vimeo\.com\/(\d+)/); if (vm) return { type: "vimeo", embed: `https://player.vimeo.com/video/${vm[1]}`, watch: `https://vimeo.com/${vm[1]}` }; return { type: "other", embed: url, watch: url }; }
-    function fmtDate(d) { if (!d) return ""; const [y, m, day] = d.split("-"); return `${day}/${m}/${y}`; }
+/* ── ATTACHMENTS EDITOR ── */
+function AttEdit({atts=[],onChange}){
+  const[t,sT]=useState("");const[u,sU]=useState("");const[tp,sTp]=useState("link");
+  const add=()=>{if(!t||!u)return;onChange([...atts,{id:gid(),tipo:tp,title:t,url:u}]);sT("");sU("");};
+  const remove=(id)=>onChange(atts.filter(x=>x.id!==id));
+  return(<div style={{marginBottom:13}}>
+    <label style={{display:"block",marginBottom:6,fontSize:11,color:"#888",fontWeight:500,textTransform:"uppercase"}}>Anexos / Links</label>
+    {atts.length>0&&<div style={{marginBottom:8}}>{atts.map(a=>(<div key={a.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:"#0a0a0a",borderRadius:8,marginBottom:3,border:"1px solid #1a1a1a"}}><span style={{color:"#555"}}>{a.tipo==="file"?<I.File/>:<I.Link/>}</span><span style={{flex:1,color:"#ccc",fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.title}</span><button onClick={()=>remove(a.id)} type="button" style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer",padding:2}}><I.Trash/></button></div>))}</div>}
+    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><select value={tp} onChange={e=>sTp(e.target.value)} style={{padding:"8px 10px",background:"#0a0a0a",border:"1px solid #333",borderRadius:8,color:"#fff",fontSize:13,width:90}}><option value="link">Link</option><option value="file">Arquivo/PDF</option></select><input placeholder="Título do material" value={t} onChange={e=>sT(e.target.value)} style={{flex:1,minWidth:80,padding:"8px 10px",background:"#0a0a0a",border:"1px solid #333",borderRadius:8,color:"#fff",fontSize:13,outline:"none"}}/></div>
+    <div style={{display:"flex",gap:6,marginTop:6}}><input placeholder="URL do material (https://...)" value={u} onChange={e=>sU(e.target.value)} style={{flex:1,padding:"8px 10px",background:"#0a0a0a",border:"1px solid #333",borderRadius:8,color:"#fff",fontSize:13,outline:"none"}}/><Btn variant="secondary" size="sm" onClick={add} style={{flexShrink:0}}>Adicionar</Btn></div>
+  </div>);
+}
 
-    /* ═══ VIDEO PLAYER ═══ */
-    function VidPlayer({ info, url }) { const [loading, setLd] = useState(true); useEffect(() => setLd(true), [url]); const pn = info?.type === "youtube" ? "YouTube" : info?.type === "vimeo" ? "Vimeo" : "Vídeo"; return (<div style={{ width: "100%", aspectRatio: "16/9", background: "#080808", position: "relative", overflow: "hidden" }}>{loading && <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 2, background: "#080808" }}><div style={{ width: 34, height: 34, border: "3px solid #333", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: 12 }} /><div style={{ color: "#888", fontSize: 13 }}>Carregando...</div></div>}<iframe key={info?.embed} src={info?.embed} style={{ width: "100%", height: "100%", border: "none", position: "absolute", inset: 0 }} allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;fullscreen" allowFullScreen onLoad={() => setLd(false)} /><a href={info?.watch || url} target="_blank" rel="noopener noreferrer" style={{ position: "absolute", bottom: 10, right: 10, zIndex: 5, padding: "5px 10px", background: "rgba(0,0,0,.75)", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, opacity: .6, backdropFilter: "blur(8px)" }}><I.ExtLink />{pn}</a></div>); }
+/* ── ATTACHMENTS DISPLAY ── */
+function AttShow({atts=[]}){if(!atts.length)return null;return(<div style={{marginTop:18}}><h4 style={{color:"#888",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Materiais</h4><div style={{display:"grid",gap:5}}>{atts.map(a=>(<a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"11px 13px",background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:10,color:"#ccc",textDecoration:"none",fontSize:14,transition:"border-color .15s"}} onMouseEnter={e=>e.currentTarget.style.borderColor="#333"} onMouseLeave={e=>e.currentTarget.style.borderColor="#1a1a1a"}><span style={{color:"#555"}}>{a.tipo==="file"?<I.File/>:<I.Link/>}</span><span style={{flex:1,fontWeight:500}}>{a.title}</span><I.ExtLink/></a>))}</div></div>);}
 
-    /* ═══ ATTACHMENTS EDITOR (TASK 3+4 FIX: deep-copy safe) ═══ */
-    function AttEdit({ atts = [], onChange }) {
-      const [t, sT] = useState(""); const [u, sU] = useState(""); const [tp, sTp] = useState("link");
-      const add = () => { if (!t || !u) return; onChange([...atts, { id: gid(), tipo: tp, title: t, url: u }]); sT(""); sU(""); };
-      const remove = (id) => onChange(atts.filter(x => x.id !== id));
-      return (<div style={{ marginBottom: 13 }}>
-        <label style={{ display: "block", marginBottom: 6, fontSize: 11, color: "#888", fontWeight: 500, textTransform: "uppercase" }}>Anexos / Links</label>
-        {atts.length > 0 && <div style={{ marginBottom: 8 }}>{atts.map(a => (<div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#0a0a0a", borderRadius: 8, marginBottom: 3, border: "1px solid #1a1a1a" }}><span style={{ color: "#555" }}>{a.tipo === "file" ? <I.File /> : <I.Link />}</span><span style={{ flex: 1, color: "#ccc", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</span><button onClick={() => remove(a.id)} type="button" style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 2 }}><I.Trash /></button></div>))}</div>}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}><select value={tp} onChange={e => sTp(e.target.value)} style={{ padding: "8px 10px", background: "#0a0a0a", border: "1px solid #333", borderRadius: 8, color: "#fff", fontSize: 13, width: 90 }}><option value="link">Link</option><option value="file">Arquivo/PDF</option></select><input placeholder="Título do material" value={t} onChange={e => sT(e.target.value)} style={{ flex: 1, minWidth: 80, padding: "8px 10px", background: "#0a0a0a", border: "1px solid #333", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none" }} /></div>
-        <div style={{ display: "flex", gap: 6, marginTop: 6 }}><input placeholder="URL do material (https://...)" value={u} onChange={e => sU(e.target.value)} style={{ flex: 1, padding: "8px 10px", background: "#0a0a0a", border: "1px solid #333", borderRadius: 8, color: "#fff", fontSize: 13, outline: "none" }} /><Btn variant="secondary" size="sm" onClick={add} style={{ flexShrink: 0 }}>Adicionar</Btn></div>
-      </div>);
-    }
+/* ── LOGIN ── */
+function LoginPage({onLogin}){const[e,sE]=useState("");const[p,sP]=useState("");const[er,sEr]=useState("");const[lo,sLo]=useState(false);
+  const go=()=>{sEr("");const te=e.trim().toLowerCase(),tp=p.trim();if(!te||!tp){sEr("Preencha todos os campos");return;}sLo(true);const adm=ld(SK.ADMIN,DEFAULT_ADMIN);if(te===adm.email.toLowerCase()&&tp===adm.password){sLo(false);onLogin({role:"admin",email:adm.email});return;}const sts=ld(SK.STUDENTS,[]);const st=sts.find(s=>s.email.trim().toLowerCase()===te&&s.password===tp);if(st){sLo(false);onLogin({role:"student",...st});return;}sLo(false);sEr("E-mail ou senha incorretos");};
+  return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#000",position:"relative",overflow:"hidden",padding:20}}>
+    <div style={{position:"absolute",inset:0,opacity:.03,backgroundImage:"linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",backgroundSize:"60px 60px"}}/>
+    <div style={{position:"relative",width:420,maxWidth:"100%",padding:"34px 26px",background:"rgba(10,10,10,.8)",border:"1px solid #1a1a1a",borderRadius:20,backdropFilter:"blur(20px)"}}>
+      <div style={{textAlign:"center",marginBottom:30}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:12,marginBottom:12}}><Logo size={42}/><span style={{fontSize:22,fontWeight:700,color:"#fff",letterSpacing:"-.5px"}}>Mentoria MVP</span></div>
+        <p style={{color:"#555",fontSize:14,margin:0}}>Acesse sua área de aprendizado</p>
+      </div>
+      {er&&<div style={{padding:"11px 14px",background:"#1a0a0a",border:"1px solid #331111",borderRadius:10,color:"#ef4444",fontSize:13,marginBottom:12,textAlign:"center"}}>{er}</div>}
+      <Input label="E-mail" type="email" value={e} onChange={x=>sE(x.target.value)} placeholder="seu@email.com"/>
+      <Input label="Senha" type="password" value={p} onChange={x=>sP(x.target.value)} placeholder="••••••••"/>
+      <Btn onClick={go} disabled={lo} size="lg" style={{width:"100%",justifyContent:"center",marginTop:6}}>{lo?"Entrando...":"Entrar"}</Btn>
+      <p style={{color:"#333",fontSize:12,textAlign:"center",marginTop:18}}>Acesso exclusivo para alunos cadastrados.</p>
+    </div>
+  </div>);
+}
 
-    /* ═══ ATTACHMENTS DISPLAY ═══ */
-    function AttShow({ atts = [] }) { if (!atts.length) return null; return (<div style={{ marginTop: 18 }}><h4 style={{ color: "#888", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8 }}>Materiais</h4><div style={{ display: "grid", gap: 5 }}>{atts.map(a => (<a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 10, color: "#ccc", textDecoration: "none", fontSize: 14, transition: "border-color .15s" }} onMouseEnter={e => e.currentTarget.style.borderColor = "#333"} onMouseLeave={e => e.currentTarget.style.borderColor = "#1a1a1a"}><span style={{ color: "#555" }}>{a.tipo === "file" ? <I.File /> : <I.Link />}</span><span style={{ flex: 1, fontWeight: 500 }}>{a.title}</span><I.ExtLink /></a>))}</div></div>); }
+/* ── ADMIN ── */
+function AdminDash({user,onLogout}){const mob=useIsMobile();const[tab,sTab]=useState("dash");const[sts,sSts]=useState([]);const[mods,sMods]=useState([]);const[prog,sProg]=useState({});const[evts,sEvts]=useState([]);const[toast,sToast]=useState(null);const[ok,sOk]=useState(false);const[side,sSide]=useState(false);
+  useEffect(()=>{sSts(ld(SK.STUDENTS,[]));sMods(ld(SK.MODULES,[]));sProg(ld(SK.PROGRESS,{}));sEvts(ld(SK.EVENTS,[]));sOk(true);},[]);
+  const tt=(m,t="success")=>sToast({message:m,type:t});
+  const svSts=s=>{sv(SK.STUDENTS,s);sSts(s);};const svMods=m=>{sv(SK.MODULES,m);sMods(m);};const svEvts=e=>{sv(SK.EVENTS,e);sEvts(e);};
+  const tabs=[{id:"dash",l:"Dashboard",i:<I.Home/>},{id:"sts",l:"Alunos",i:<I.Users/>},{id:"mods",l:"Módulos",i:<I.Book/>},{id:"evts",l:"Eventos",i:<I.Calendar/>},{id:"prog",l:"Progresso",i:<I.Chart/>}];
+  if(!ok)return<div style={{minHeight:"100vh",background:"#000",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{color:"#fff"}}>Carregando...</div></div>;
+  const Side=()=>(<aside style={{width:230,background:"#080808",borderRight:"1px solid #161616",display:"flex",flexDirection:"column",flexShrink:0,height:"100vh",position:mob?"fixed":"sticky",top:0,left:0,zIndex:mob?900:1}}>
+    <div style={{padding:"18px 14px",display:"flex",alignItems:"center",gap:10}}><Logo size={30}/><div><div style={{color:"#fff",fontWeight:700,fontSize:14}}>Mentoria MVP</div><div style={{color:"#444",fontSize:10}}>Painel Admin</div></div></div>
+    <nav style={{flex:1,padding:"4px 8px"}}>{tabs.map(t=>(<button key={t.id} onClick={()=>{sTab(t.id);sSide(false);}} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"10px 12px",border:"none",borderRadius:10,marginBottom:2,background:tab===t.id?"#1a1a1a":"transparent",color:tab===t.id?"#fff":"#666",cursor:"pointer",fontSize:13,fontWeight:500,textAlign:"left"}}>{t.i}{t.l}</button>))}</nav>
+    <div style={{padding:"12px 8px",borderTop:"1px solid #161616"}}><div style={{padding:"5px 12px",marginBottom:4}}><div style={{color:"#666",fontSize:11}}>{user.email}</div></div><button onClick={onLogout} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"10px 12px",border:"none",borderRadius:10,background:"transparent",color:"#ef4444",cursor:"pointer",fontSize:13,fontWeight:500}}><I.Logout/>Sair</button></div>
+  </aside>);
+  return(<div style={{minHeight:"100vh",background:"#000",display:"flex"}}>{toast&&<Toast{...toast}onClose={()=>sToast(null)}/>}{mob&&side&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:899}} onClick={()=>sSide(false)}/>}{(!mob||side)&&<Side/>}<main style={{flex:1,minWidth:0,overflowY:"auto"}}>{mob&&<div style={{padding:"12px 14px",borderBottom:"1px solid #161616",display:"flex",alignItems:"center",gap:10}}><button onClick={()=>sSide(true)} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",padding:4}}><I.Menu/></button><span style={{color:"#fff",fontWeight:600,fontSize:15}}>{tabs.find(t=>t.id===tab)?.l}</span></div>}<div style={{padding:mob?"18px 14px":"26px 32px"}}>
+    {tab==="dash"&&<ADash sts={sts} mods={mods} prog={prog} evts={evts}/>}
+    {tab==="sts"&&<ASts sts={sts} mods={mods} onSave={svSts} tt={tt}/>}
+    {tab==="mods"&&<AMods mods={mods} sts={sts} onSave={svMods} tt={tt}/>}
+    {tab==="evts"&&<AEvts evts={evts} sts={sts} onSave={svEvts} tt={tt}/>}
+    {tab==="prog"&&<AProg sts={sts} mods={mods} prog={prog}/>}
+  </div></main></div>);
+}
 
-    /* ═══ LOGIN ═══ */
-    function LoginPage({ onLogin }) {
-      const [e, sE] = useState(""); const [p, sP] = useState(""); const [er, sEr] = useState(""); const [lo, sLo] = useState(false);
-      const go = async () => {
-        sEr(""); const te = e.trim().toLowerCase(), tp = p.trim(); if (!te || !tp) { sEr("Preencha todos os campos"); return; } sLo(true); const adm = ld(SK.ADMIN, DEFAULT_ADMIN); if (te === adm.email.toLowerCase() && tp === adm.password) { sLo(false); onLogin({ role: "admin", email: adm.email }); return; }
-        try { const sts = await api.getStudents(); const st = sts.find(s => s.email.trim().toLowerCase() === te && s.password === tp); if (st) { sLo(false); onLogin({ role: "student", ...st }); return; } } catch (err) { console.error(err); }
-        sLo(false); sEr("E-mail ou senha incorretos");
-      };
-      return (<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000", position: "relative", overflow: "hidden", padding: 20 }}>
-        <div style={{ position: "absolute", inset: 0, opacity: .03, backgroundImage: "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
-        <div style={{ position: "relative", width: 420, maxWidth: "100%", padding: "34px 26px", background: "rgba(10,10,10,.8)", border: "1px solid #1a1a1a", borderRadius: 20, backdropFilter: "blur(20px)" }}>
-          <div style={{ textAlign: "center", marginBottom: 30 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Logo size={42} /><span style={{ fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-.5px" }}>Mentoria MVP</span></div>
-            <p style={{ color: "#555", fontSize: 14, margin: 0 }}>Acesse sua área de aprendizado</p>
-          </div>
-          {er && <div style={{ padding: "11px 14px", background: "#1a0a0a", border: "1px solid #331111", borderRadius: 10, color: "#ef4444", fontSize: 13, marginBottom: 12, textAlign: "center" }}>{er}</div>}
-          <Input label="E-mail" type="email" value={e} onChange={x => sE(x.target.value)} placeholder="seu@email.com" />
-          <Input label="Senha" type="password" value={p} onChange={x => sP(x.target.value)} placeholder="••••••••" />
-          <Btn onClick={go} disabled={lo} size="lg" style={{ width: "100%", justifyContent: "center", marginTop: 6 }}>{lo ? "Entrando..." : "Entrar"}</Btn>
-          <p style={{ color: "#333", fontSize: 12, textAlign: "center", marginTop: 18 }}>Acesso exclusivo para alunos cadastrados.</p>
-        </div>
-      </div>);
-    }
+/* Admin Dashboard */
+function ADash({sts,mods,prog,evts}){const tl=mods.reduce((a,m)=>a+m.lessons.length,0);const stats=[{l:"Alunos",v:sts.length,i:<I.Users/>},{l:"Módulos",v:mods.length,i:<I.Book/>},{l:"Aulas",v:tl,i:<I.Play/>},{l:"Eventos",v:evts.length,i:<I.Calendar/>}];return(<div><h1 style={{color:"#fff",fontSize:24,fontWeight:700,margin:"0 0 6px"}}>Dashboard</h1><p style={{color:"#555",fontSize:14,margin:"0 0 22px"}}>Visão geral</p><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10}}>{stats.map(s=>(<div key={s.l} style={{background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:14,padding:"16px 14px"}}><div style={{color:"#444",marginBottom:8}}>{s.i}</div><div style={{color:"#fff",fontSize:26,fontWeight:700}}>{s.v}</div><div style={{color:"#555",fontSize:12,marginTop:2}}>{s.l}</div></div>))}</div></div>);}
 
-    /* ═══ ADMIN ═══ */
-    function AdminDash({ user, onLogout }) {
-      const mob = useIsMobile(); const [tab, sTab] = useState("dash"); const [sts, sSts] = useState([]); const [mods, sMods] = useState([]); const [prog, sProg] = useState({}); const [evts, sEvts] = useState([]); const [toast, sToast] = useState(null); const [ok, sOk] = useState(false); const [side, sSide] = useState(false);
-      const loadAll = async () => { const [s, m, p, e] = await Promise.all([api.getStudents(), api.getModules(), api.getProgress(), api.getEvents()]); sSts(s); sMods(m); sProg(p); sEvts(e); sOk(true); };
-      useEffect(() => { loadAll(); }, []);
-      const tt = (m, t = "success") => sToast({ message: m, type: t });
-      const actSts = { addUpdate: async (ns) => { await api.upsertStudent(ns); await loadAll(); }, remove: async (id) => { await api.deleteStudent(id); await loadAll(); } };
-      const actMods = { addUpdate: async (nm) => { await api.upsertModule(nm); await loadAll(); }, remove: async (id) => { await api.deleteModule(id); await loadAll(); } };
-      const actEvts = { addUpdate: async (ne) => { await api.upsertEvent(ne); await loadAll(); }, remove: async (id) => { await api.deleteEvent(id); await loadAll(); } };
-      const tabs = [{ id: "dash", l: "Dashboard", i: <I.Home /> }, { id: "sts", l: "Alunos", i: <I.Users /> }, { id: "mods", l: "Módulos", i: <I.Book /> }, { id: "evts", l: "Eventos", i: <I.Calendar /> }, { id: "prog", l: "Progresso", i: <I.Chart /> }];
-      if (!ok) return <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: 34, height: 34, border: "3px solid #333", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .8s linear infinite" }} /></div>;
-      const Side = () => (<aside style={{ width: 230, background: "#080808", borderRight: "1px solid #161616", display: "flex", flexDirection: "column", flexShrink: 0, height: "100vh", position: mob ? "fixed" : "sticky", top: 0, left: 0, zIndex: mob ? 900 : 1 }}>
-        <div style={{ padding: "18px 14px", display: "flex", alignItems: "center", gap: 10 }}><Logo size={30} /><div><div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>Mentoria MVP</div><div style={{ color: "#444", fontSize: 10 }}>Painel Admin</div></div></div>
-        <nav style={{ flex: 1, padding: "4px 8px" }}>{tabs.map(t => (<button key={t.id} onClick={() => { sTab(t.id); sSide(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", border: "none", borderRadius: 10, marginBottom: 2, background: tab === t.id ? "#1a1a1a" : "transparent", color: tab === t.id ? "#fff" : "#666", cursor: "pointer", fontSize: 13, fontWeight: 500, textAlign: "left" }}>{t.i}{t.l}</button>))}</nav>
-        <div style={{ padding: "12px 8px", borderTop: "1px solid #161616" }}><div style={{ padding: "5px 12px", marginBottom: 4 }}><div style={{ color: "#666", fontSize: 11 }}>{user.email}</div></div><button onClick={onLogout} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 12px", border: "none", borderRadius: 10, background: "transparent", color: "#ef4444", cursor: "pointer", fontSize: 13, fontWeight: 500 }}><I.Logout />Sair</button></div>
-      </aside>);
-      return (<div style={{ minHeight: "100vh", background: "#000", display: "flex" }}>{toast && <Toast{...toast} onClose={() => sToast(null)} />}{mob && side && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", zIndex: 899 }} onClick={() => sSide(false)} />}{(!mob || side) && <Side />}<main style={{ flex: 1, minWidth: 0, overflowY: "auto" }}>{mob && <div style={{ padding: "12px 14px", borderBottom: "1px solid #161616", display: "flex", alignItems: "center", gap: 10 }}><button onClick={() => sSide(true)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 4 }}><I.Menu /></button><span style={{ color: "#fff", fontWeight: 600, fontSize: 15 }}>{tabs.find(t => t.id === tab)?.l}</span></div>}<div style={{ padding: mob ? "18px 14px" : "26px 32px" }}>
-        {tab === "dash" && <ADash sts={sts} mods={mods} prog={prog} evts={evts} />}
-        {tab === "sts" && <ASts sts={sts} mods={mods} ops={actSts} tt={tt} />}
-        {tab === "mods" && <AMods mods={mods} sts={sts} ops={actMods} tt={tt} />}
-        {tab === "evts" && <AEvts evts={evts} sts={sts} ops={actEvts} tt={tt} />}
-        {tab === "prog" && <AProg sts={sts} mods={mods} prog={prog} />}
-      </div></main></div>);
-    }
+/* Admin Students */
+function ASts({sts,mods,onSave,tt}){const[sh,sSh]=useState(false);const[eId,sEId]=useState(null);const[f,sF]=useState({name:"",email:"",password:"",assignedModules:[]});const[sr,sSr]=useState("");
+  const save=()=>{if(!f.name||!f.email||(!eId&&!f.password)){tt("Preencha campos obrigatórios","error");return;}if(eId){onSave(sts.map(s=>{if(s.id!==eId)return s;const u={...s,name:f.name,email:f.email,assignedModules:f.assignedModules};if(f.password.trim())u.password=f.password;return u;}));tt("Atualizado!");}else{if(sts.some(s=>s.email===f.email)){tt("E-mail já existe","error");return;}onSave([...sts,{...f,id:gid()}]);tt("Cadastrado!");}sSh(false);};
+  const togM=id=>{const a=f.assignedModules||[];sF({...f,assignedModules:a.includes(id)?a.filter(x=>x!==id):[...a,id]});};
+  const fil=sts.filter(s=>s.name.toLowerCase().includes(sr.toLowerCase())||s.email.toLowerCase().includes(sr.toLowerCase()));
+  return(<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22,flexWrap:"wrap",gap:10}}><div><h1 style={{color:"#fff",fontSize:24,fontWeight:700,margin:0}}>Alunos</h1><p style={{color:"#555",fontSize:14,margin:"2px 0 0"}}>{sts.length} cadastrado(s)</p></div><Btn onClick={()=>{sF({name:"",email:"",password:"",assignedModules:[]});sEId(null);sSh(true);}}><I.Plus/>Novo</Btn></div>
+    {sts.length>3&&<div style={{position:"relative",marginBottom:14}}><div style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:"#444"}}><I.Search/></div><input value={sr} onChange={e=>sSr(e.target.value)} placeholder="Buscar..." style={{width:"100%",padding:"10px 13px 10px 38px",background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:10,color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}}/></div>}
+    {fil.length===0?<Empty icon={<I.Users/>} text={sts.length===0?"Nenhum aluno":"Sem resultados"}/>:<div style={{display:"grid",gap:7}}>{fil.map(s=>(<div key={s.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 14px",background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:12,gap:10}}><div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}><Av name={s.name} size={38}/><div style={{minWidth:0}}><div style={{color:"#fff",fontWeight:600,fontSize:14}}>{s.name}</div><div style={{color:"#555",fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.email}</div></div></div><div style={{display:"flex",gap:3,flexShrink:0}}><Btn variant="ghost" size="sm" onClick={()=>{sF({name:s.name,email:s.email,password:"",assignedModules:s.assignedModules||[]});sEId(s.id);sSh(true);}}><I.Edit/></Btn><Btn variant="ghost" size="sm" onClick={()=>{onSave(sts.filter(x=>x.id!==s.id));tt("Removido");}} style={{color:"#ef4444"}}><I.Trash/></Btn></div></div>))}</div>}
+    {sh&&<Modal title={eId?"Editar Aluno":"Novo Aluno"} onClose={()=>sSh(false)}><Input label="Nome" value={f.name} onChange={e=>sF({...f,name:e.target.value})} placeholder="Nome"/><Input label="E-mail" type="email" value={f.email} onChange={e=>sF({...f,email:e.target.value})} placeholder="email@ex.com"/><Input label={eId?"Nova Senha (vazio=manter)":"Senha"} type="password" value={f.password} onChange={e=>sF({...f,password:e.target.value})} placeholder="••••••••"/>{mods.length>0&&<div style={{marginBottom:13}}><label style={{display:"block",marginBottom:5,fontSize:11,color:"#888",fontWeight:500,textTransform:"uppercase"}}>Módulos</label><div style={{display:"grid",gap:5}}>{mods.map(m=>{const on=(f.assignedModules||[]).includes(m.id);return(<button key={m.id} onClick={()=>togM(m.id)} type="button" style={{display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:on?"#1a1a1a":"#0a0a0a",border:`1px solid ${on?"#333":"#1a1a1a"}`,borderRadius:10,cursor:"pointer",color:on?"#fff":"#666"}}><div style={{width:18,height:18,borderRadius:5,border:`2px solid ${on?"#fff":"#333"}`,display:"flex",alignItems:"center",justifyContent:"center",background:on?"#fff":"transparent",flexShrink:0}}>{on&&<I.Check s={12}/>}</div><span style={{fontSize:13,fontWeight:500}}>{m.title}</span></button>);})}</div></div>}<div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:14}}><Btn variant="secondary" onClick={()=>sSh(false)}>Cancelar</Btn><Btn onClick={save}>{eId?"Salvar":"Cadastrar"}</Btn></div></Modal>}
+  </div>);
+}
 
-    /* Admin Dashboard */
-    function ADash({ sts, mods, prog, evts }) { const tl = mods.reduce((a, m) => a + m.lessons.length, 0); const stats = [{ l: "Alunos", v: sts.length, i: <I.Users /> }, { l: "Módulos", v: mods.length, i: <I.Book /> }, { l: "Aulas", v: tl, i: <I.Play /> }, { l: "Eventos", v: evts.length, i: <I.Calendar /> }]; return (<div><h1 style={{ color: "#fff", fontSize: 24, fontWeight: 700, margin: "0 0 6px" }}>Dashboard</h1><p style={{ color: "#555", fontSize: 14, margin: "0 0 22px" }}>Visão geral</p><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10 }}>{stats.map(s => (<div key={s.l} style={{ background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 14, padding: "16px 14px" }}><div style={{ color: "#444", marginBottom: 8 }}>{s.i}</div><div style={{ color: "#fff", fontSize: 26, fontWeight: 700 }}>{s.v}</div><div style={{ color: "#555", fontSize: 12, marginTop: 2 }}>{s.l}</div></div>))}</div></div>); }
+/* Admin Modules */
+function AMods({mods,sts,onSave,tt}){const[smm,sSmm]=useState(false);const[slm,sSlm]=useState(false);const[em,sEm]=useState(null);const[el,sEl]=useState(null);const[am,sAm]=useState(null);const[mf,sMf]=useState({title:"",description:""});const[lf,sLf]=useState({title:"",type:"video",url:"",description:"",attachments:[]});const[exp,sExp]=useState({});
+  const savM=()=>{if(!mf.title){tt("Nome obrigatório","error");return;}if(em){onSave(mods.map(m=>m.id===em?{...m,title:mf.title,description:mf.description}:m));tt("Atualizado!");}else{onSave([...mods,{title:mf.title,description:mf.description,id:gid(),lessons:[]}]);tt("Criado!");}sSmm(false);};
+  const savL=()=>{if(!lf.title){tt("Título obrigatório","error");return;}
+    const cleanLesson={title:lf.title,type:lf.type,url:lf.url,description:lf.description,attachments:JSON.parse(JSON.stringify(lf.attachments||[]))};
+    onSave(mods.map(m=>{if(m.id!==am)return m;if(el){return{...m,lessons:m.lessons.map(l=>l.id===el?{...l,...cleanLesson}:l)};}return{...m,lessons:[...m.lessons,{...cleanLesson,id:gid()}]};}));
+    tt(el?"Atualizada!":"Adicionada!");sSlm(false);
+  };
+  const openLessonEdit=(modId,lesson)=>{sAm(modId);sLf({title:lesson.title,type:lesson.type,url:lesson.url,description:lesson.description||"",attachments:JSON.parse(JSON.stringify(lesson.attachments||[]))});sEl(lesson.id);sSlm(true);};
+  const openLessonNew=(modId)=>{sAm(modId);sLf({title:"",type:"video",url:"",description:"",attachments:[]});sEl(null);sSlm(true);};
 
-    /* Admin Students */
-    function ASts({ sts, mods, ops, tt }) {
-      const [sh, sSh] = useState(false); const [eId, sEId] = useState(null); const [f, sF] = useState({ name: "", email: "", password: "", assignedModules: [] }); const [sr, sSr] = useState(""); const [svLd, sSvLd] = useState(false);
-      const save = async () => {
-        if (!f.name || !f.email || (!eId && !f.password)) { tt("Preencha campos obrigatórios", "error"); return; }
-        sSvLd(true);
-        if (eId) {
-          const cur = sts.find(s => s.id === eId);
-          const u = { ...cur, name: f.name, email: f.email, assignedModules: f.assignedModules };
-          if (f.password.trim()) u.password = f.password;
-          await ops.addUpdate(u); tt("Atualizado!");
-        } else {
-          if (sts.some(s => s.email === f.email)) { tt("E-mail já existe", "error"); sSvLd(false); return; }
-          await ops.addUpdate({ ...f, id: gid() }); tt("Cadastrado!");
-        }
-        sSvLd(false); sSh(false);
-      };
-      const togM = id => { const a = f.assignedModules || []; sF({ ...f, assignedModules: a.includes(id) ? a.filter(x => x !== id) : [...a, id] }); };
-      const fil = sts.filter(s => s.name.toLowerCase().includes(sr.toLowerCase()) || s.email.toLowerCase().includes(sr.toLowerCase()));
-      return (<div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22, flexWrap: "wrap", gap: 10 }}><div><h1 style={{ color: "#fff", fontSize: 24, fontWeight: 700, margin: 0 }}>Alunos</h1><p style={{ color: "#555", fontSize: 14, margin: "2px 0 0" }}>{sts.length} cadastrado(s)</p></div><Btn onClick={() => { sF({ name: "", email: "", password: "", assignedModules: [] }); sEId(null); sSh(true); }}><I.Plus />Novo</Btn></div>
-        {sts.length > 3 && <div style={{ position: "relative", marginBottom: 14 }}><div style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#444" }}><I.Search /></div><input value={sr} onChange={e => sSr(e.target.value)} placeholder="Buscar..." style={{ width: "100%", padding: "10px 13px 10px 38px", background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 10, color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box" }} /></div>}
-        {fil.length === 0 ? <Empty icon={<I.Users />} text={sts.length === 0 ? "Nenhum aluno" : "Sem resultados"} /> : <div style={{ display: "grid", gap: 7 }}>{fil.map(s => (<div key={s.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 14px", background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 12, gap: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}><Av name={s.name} size={38} /><div style={{ minWidth: 0 }}><div style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>{s.name}</div><div style={{ color: "#555", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.email}</div></div></div><div style={{ display: "flex", gap: 3, flexShrink: 0 }}><Btn variant="ghost" size="sm" onClick={() => { sF({ name: s.name, email: s.email, password: "", assignedModules: s.assignedModules || [] }); sEId(s.id); sSh(true); }}><I.Edit /></Btn><Btn variant="ghost" size="sm" onClick={async () => { await ops.remove(s.id); tt("Removido"); }} style={{ color: "#ef4444" }}><I.Trash /></Btn></div></div>))}</div>}
-        {sh && <Modal title={eId ? "Editar Aluno" : "Novo Aluno"} onClose={() => sSh(false)}><Input label="Nome" value={f.name} onChange={e => sF({ ...f, name: e.target.value })} placeholder="Nome" /><Input label="E-mail" type="email" value={f.email} onChange={e => sF({ ...f, email: e.target.value })} placeholder="email@ex.com" /><Input label={eId ? "Nova Senha (vazio=manter)" : "Senha"} type="password" value={f.password} onChange={e => sF({ ...f, password: e.target.value })} placeholder="••••••••" />{mods.length > 0 && <div style={{ marginBottom: 13 }}><label style={{ display: "block", marginBottom: 5, fontSize: 11, color: "#888", fontWeight: 500, textTransform: "uppercase" }}>Módulos</label><div style={{ display: "grid", gap: 5 }}>{mods.map(m => { const on = (f.assignedModules || []).includes(m.id); return (<button key={m.id} onClick={() => togM(m.id)} type="button" style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 12px", background: on ? "#1a1a1a" : "#0a0a0a", border: `1px solid ${on ? "#333" : "#1a1a1a"}`, borderRadius: 10, cursor: "pointer", color: on ? "#fff" : "#666" }}><div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${on ? "#fff" : "#333"}`, display: "flex", alignItems: "center", justifyContent: "center", background: on ? "#fff" : "transparent", flexShrink: 0 }}>{on && <I.Check s={12} />}</div><span style={{ fontSize: 13, fontWeight: 500 }}>{m.title}</span></button>); })}</div></div>}<div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 14 }}><Btn variant="secondary" onClick={() => sSh(false)}>Cancelar</Btn><Btn onClick={save} disabled={svLd}>{svLd ? "..." : eId ? "Salvar" : "Cadastrar"}</Btn></div></Modal>}
-      </div>);
-    }
+  return(<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22,flexWrap:"wrap",gap:10}}><div><h1 style={{color:"#fff",fontSize:24,fontWeight:700,margin:0}}>Módulos</h1><p style={{color:"#555",fontSize:14,margin:"2px 0 0"}}>{mods.length} módulo(s)</p></div><Btn onClick={()=>{sMf({title:"",description:""});sEm(null);sSmm(true);}}><I.Plus/>Novo</Btn></div>
+    {mods.length===0?<Empty icon={<I.Book/>} text="Crie seu primeiro módulo"/>:<div style={{display:"grid",gap:9}}>{mods.map((m,mi)=>(<div key={m.id} style={{background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:14,overflow:"hidden"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 14px",cursor:"pointer"}} onClick={()=>sExp(p=>({...p,[m.id]:!p[m.id]}))}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:30,height:30,borderRadius:8,background:"#1a1a1a",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:13}}>{mi+1}</div><div><div style={{color:"#fff",fontWeight:600,fontSize:14}}>{m.title}</div><div style={{color:"#555",fontSize:11}}>{m.lessons.length} aula(s)</div></div></div>
+      <div style={{display:"flex",alignItems:"center",gap:3}}><Btn variant="ghost" size="sm" onClick={e=>{e.stopPropagation();sMf({title:m.title,description:m.description});sEm(m.id);sSmm(true);}}><I.Edit/></Btn><Btn variant="ghost" size="sm" onClick={e=>{e.stopPropagation();onSave(mods.filter(x=>x.id!==m.id));tt("Removido");}} style={{color:"#ef4444"}}><I.Trash/></Btn><div style={{color:"#444",transform:exp[m.id]?"rotate(0)":"rotate(-90deg)",transition:"transform .2s"}}><I.ChevDown/></div></div></div>
+      {exp[m.id]&&<div style={{borderTop:"1px solid #161616",padding:"8px 14px 12px"}}>{m.lessons.map((l,li)=>(<div key={l.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 10px",background:"#111",borderRadius:8,marginBottom:3}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{color:"#333",fontSize:12,fontWeight:600,width:18}}>{li+1}</span><span style={{color:"#555"}}>{l.type==="video"?<I.Video/>:l.type==="link"?<I.Link/>:<I.File/>}</span><span style={{color:"#ccc",fontSize:13,fontWeight:500}}>{l.title}</span>{(l.attachments||[]).length>0&&<span style={{color:"#555"}}><I.Paperclip/></span>}</div>
+        <div style={{display:"flex",gap:2}}><Btn variant="ghost" size="sm" onClick={()=>openLessonEdit(m.id,l)}><I.Edit/></Btn><Btn variant="ghost" size="sm" onClick={()=>{onSave(mods.map(x=>x.id===m.id?{...x,lessons:x.lessons.filter(y=>y.id!==l.id)}:x));tt("Removida");}} style={{color:"#ef4444"}}><I.Trash/></Btn></div>
+      </div>))}<Btn variant="secondary" size="sm" onClick={()=>openLessonNew(m.id)} style={{marginTop:5}}><I.Plus/>Aula</Btn></div>}
+    </div>))}</div>}
+    {smm&&<Modal title={em?"Editar Módulo":"Novo Módulo"} onClose={()=>sSmm(false)}><Input label="Nome" value={mf.title} onChange={e=>sMf({...mf,title:e.target.value})} placeholder="Ex: Fundamentos"/><Textarea label="Descrição" value={mf.description} onChange={e=>sMf({...mf,description:e.target.value})}/><div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:14}}><Btn variant="secondary" onClick={()=>sSmm(false)}>Cancelar</Btn><Btn onClick={savM}>{em?"Salvar":"Criar"}</Btn></div></Modal>}
+    {slm&&<Modal title={el?"Editar Aula":"Nova Aula"} onClose={()=>sSlm(false)}><Input label="Título" value={lf.title} onChange={e=>sLf({...lf,title:e.target.value})}/><Select label="Tipo" value={lf.type} onChange={e=>sLf({...lf,type:e.target.value})} options={[{value:"video",label:"Vídeo"},{value:"link",label:"Link"},{value:"file",label:"Arquivo"}]}/><Input label="URL" value={lf.url} onChange={e=>sLf({...lf,url:e.target.value})} placeholder="https://..."/><Textarea label="Descrição" value={lf.description} onChange={e=>sLf({...lf,description:e.target.value})}/><AttEdit atts={lf.attachments||[]} onChange={a=>sLf({...lf,attachments:a})}/><div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:14}}><Btn variant="secondary" onClick={()=>sSlm(false)}>Cancelar</Btn><Btn onClick={savL}>{el?"Salvar":"Adicionar"}</Btn></div></Modal>}
+  </div>);
+}
 
-    /* ═══ Admin Modules (TASK 3 FIX: deep-copy lesson form to avoid shared mutation) ═══ */
-    function AMods({ mods, sts, ops, tt }) {
-      const [smm, sSmm] = useState(false); const [slm, sSlm] = useState(false); const [em, sEm] = useState(null); const [el, sEl] = useState(null); const [am, sAm] = useState(null); const [mf, sMf] = useState({ title: "", description: "" }); const [lf, sLf] = useState({ title: "", type: "video", url: "", description: "", attachments: [] }); const [exp, sExp] = useState({}); const [svLd, sSvLd] = useState(false);
-      const savM = async () => {
-        if (!mf.title) { tt("Nome obrigatório", "error"); return; }
-        sSvLd(true);
-        if (em) {
-          const cur = mods.find(m => m.id === em);
-          await ops.addUpdate({ ...cur, title: mf.title, description: mf.description }); tt("Atualizado!");
-        } else {
-          await ops.addUpdate({ title: mf.title, description: mf.description, id: gid(), lessons: [] }); tt("Criado!");
-        }
-        sSvLd(false); sSmm(false);
-      };
-      /* TASK 3 FIX: when saving lesson, build a clean new object and deep-copy attachments */
-      const savL = async () => {
-        if (!lf.title) { tt("Título obrigatório", "error"); return; }
-        sSvLd(true);
-        const cleanLesson = { title: lf.title, type: lf.type, url: lf.url, description: lf.description, attachments: JSON.parse(JSON.stringify(lf.attachments || [])) };
-        const parentMod = mods.find(m => m.id === am);
-        let newLessons = [...parentMod.lessons];
-        if (el) newLessons = newLessons.map(l => l.id === el ? { ...l, ...cleanLesson } : l); else { cleanLesson.id = gid(); newLessons.push(cleanLesson); }
-        await ops.addUpdate({ ...parentMod, lessons: newLessons }); tt(el ? "Atualizada!" : "Adicionada!"); sSvLd(false); sSlm(false);
-      };
-      /* TASK 3 FIX: open lesson form with deep copy */
-      const openLessonEdit = (modId, lesson) => { sAm(modId); sLf({ title: lesson.title, type: lesson.type, url: lesson.url, description: lesson.description || "", attachments: JSON.parse(JSON.stringify(lesson.attachments || [])) }); sEl(lesson.id); sSlm(true); };
-      const openLessonNew = (modId) => { sAm(modId); sLf({ title: "", type: "video", url: "", description: "", attachments: [] }); sEl(null); sSlm(true); };
+/* Admin Events */
+function AEvts({evts,sts,onSave,tt}){const[sh,sSh]=useState(false);const[eId,sEId]=useState(null);const[f,sF]=useState({title:"",date:"",time:"",description:"",studentId:""});
+  const save=()=>{if(!f.title||!f.date||!f.time||!f.studentId){tt("Preencha título, data, horário e aluno","error");return;}if(eId){onSave(evts.map(e=>e.id===eId?{...e,title:f.title,date:f.date,time:f.time,description:f.description,studentId:f.studentId}:e));tt("Atualizado!");}else{onSave([...evts,{title:f.title,date:f.date,time:f.time,description:f.description,studentId:f.studentId,id:gid()}]);tt("Criado!");}sSh(false);};
+  const sorted=[...evts].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const getStName=(sid)=>{const s=sts.find(x=>x.id===sid);return s?s.name:"Aluno removido";};
+  return(<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22,flexWrap:"wrap",gap:10}}><div><h1 style={{color:"#fff",fontSize:24,fontWeight:700,margin:0}}>Eventos</h1><p style={{color:"#555",fontSize:14,margin:"2px 0 0"}}>{evts.length} evento(s)</p></div><Btn onClick={()=>{sF({title:"",date:"",time:"",description:"",studentId:sts.length>0?sts[0].id:""});sEId(null);sSh(true);}}><I.Plus/>Novo</Btn></div>
+    {evts.length===0?<Empty icon={<I.Calendar/>} text="Nenhum evento"/>:<div style={{display:"grid",gap:7}}>{sorted.map(ev=>(<div key={ev.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px",background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:12,gap:10}}>
+      <div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:46,height:46,borderRadius:11,background:"#1a1a1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}><div style={{color:"#fff",fontSize:16,fontWeight:700,lineHeight:1}}>{ev.date?ev.date.split("-")[2]:"--"}</div><div style={{color:"#666",fontSize:10}}>{ev.date?months[parseInt(ev.date.split("-")[1])-1]:""}</div></div><div><div style={{color:"#fff",fontWeight:600,fontSize:14}}>{ev.title}</div><div style={{color:"#555",fontSize:12,display:"flex",alignItems:"center",gap:4,marginTop:2}}><I.Clock/>{ev.time}</div><div style={{color:"#444",fontSize:11,marginTop:2}}>Aluno: {getStName(ev.studentId)}</div></div></div>
+      <div style={{display:"flex",gap:3,flexShrink:0}}><Btn variant="ghost" size="sm" onClick={()=>{sF({title:ev.title,date:ev.date,time:ev.time,description:ev.description||"",studentId:ev.studentId||""});sEId(ev.id);sSh(true);}}><I.Edit/></Btn><Btn variant="ghost" size="sm" onClick={()=>{onSave(evts.filter(x=>x.id!==ev.id));tt("Removido");}} style={{color:"#ef4444"}}><I.Trash/></Btn></div>
+    </div>))}</div>}
+    {sh&&<Modal title={eId?"Editar Evento":"Novo Evento"} onClose={()=>sSh(false)}>
+      <Input label="Título" value={f.title} onChange={e=>sF({...f,title:e.target.value})} placeholder="Ex: Aula ao vivo #3"/>
+      <Select label="Aluno" value={f.studentId} onChange={e=>sF({...f,studentId:e.target.value})} options={sts.map(s=>({value:s.id,label:s.name+" ("+s.email+")"}))}/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}><Input label="Data" type="date" value={f.date} onChange={e=>sF({...f,date:e.target.value})}/><Input label="Horário" type="time" value={f.time} onChange={e=>sF({...f,time:e.target.value})}/></div>
+      <Textarea label="Descrição (opcional)" value={f.description} onChange={e=>sF({...f,description:e.target.value})}/>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:14}}><Btn variant="secondary" onClick={()=>sSh(false)}>Cancelar</Btn><Btn onClick={save}>{eId?"Salvar":"Criar"}</Btn></div>
+    </Modal>}
+  </div>);
+}
 
-      return (<div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22, flexWrap: "wrap", gap: 10 }}><div><h1 style={{ color: "#fff", fontSize: 24, fontWeight: 700, margin: 0 }}>Módulos</h1><p style={{ color: "#555", fontSize: 14, margin: "2px 0 0" }}>{mods.length} módulo(s)</p></div><Btn onClick={() => { sMf({ title: "", description: "" }); sEm(null); sSmm(true); }}><I.Plus />Novo</Btn></div>
-        {mods.length === 0 ? <Empty icon={<I.Book />} text="Crie seu primeiro módulo" /> : <div style={{ display: "grid", gap: 9 }}>{mods.map((m, mi) => (<div key={m.id} style={{ background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 14, overflow: "hidden" }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 14px", cursor: "pointer" }} onClick={() => sExp(p => ({ ...p, [m.id]: !p[m.id] }))}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 30, height: 30, borderRadius: 8, background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 13 }}>{mi + 1}</div><div><div style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>{m.title}</div><div style={{ color: "#555", fontSize: 11 }}>{m.lessons.length} aula(s)</div></div></div>
-          <div style={{ display: "flex", alignItems: "center", gap: 3 }}><Btn variant="ghost" size="sm" onClick={e => { e.stopPropagation(); sMf({ title: m.title, description: m.description }); sEm(m.id); sSmm(true); }}><I.Edit /></Btn><Btn variant="ghost" size="sm" onClick={async e => { e.stopPropagation(); await ops.remove(m.id); tt("Removido"); }} style={{ color: "#ef4444" }}><I.Trash /></Btn><div style={{ color: "#444", transform: exp[m.id] ? "rotate(0)" : "rotate(-90deg)", transition: "transform .2s" }}><I.ChevDown /></div></div></div>
-          {exp[m.id] && <div style={{ borderTop: "1px solid #161616", padding: "8px 14px 12px" }}>{m.lessons.map((l, li) => (<div key={l.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 10px", background: "#111", borderRadius: 8, marginBottom: 3 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ color: "#333", fontSize: 12, fontWeight: 600, width: 18 }}>{li + 1}</span><span style={{ color: "#555" }}>{l.type === "video" ? <I.Video /> : l.type === "link" ? <I.Link /> : <I.File />}</span><span style={{ color: "#ccc", fontSize: 13, fontWeight: 500 }}>{l.title}</span>{(l.attachments || []).length > 0 && <span style={{ color: "#555" }}><I.Paperclip /></span>}</div>
-            <div style={{ display: "flex", gap: 2 }}><Btn variant="ghost" size="sm" onClick={() => openLessonEdit(m.id, l)}><I.Edit /></Btn><Btn variant="ghost" size="sm" onClick={async () => { const x = mods.find(q => q.id === m.id); await ops.addUpdate({ ...x, lessons: x.lessons.filter(y => y.id !== l.id) }); tt("Removida"); }} style={{ color: "#ef4444" }}><I.Trash /></Btn></div>
-          </div>))}<Btn variant="secondary" size="sm" onClick={() => openLessonNew(m.id)} style={{ marginTop: 5 }}><I.Plus />Aula</Btn></div>}
-        </div>))}</div>}
-        {smm && <Modal title={em ? "Editar Módulo" : "Novo Módulo"} onClose={() => sSmm(false)}><Input label="Nome" value={mf.title} onChange={e => sMf({ ...mf, title: e.target.value })} placeholder="Ex: Fundamentos" /><Textarea label="Descrição" value={mf.description} onChange={e => sMf({ ...mf, description: e.target.value })} /><div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 14 }}><Btn variant="secondary" onClick={() => sSmm(false)}>Cancelar</Btn><Btn onClick={savM} disabled={svLd}>{svLd ? "..." : em ? "Salvar" : "Criar"}</Btn></div></Modal>}
-        {slm && <Modal title={el ? "Editar Aula" : "Nova Aula"} onClose={() => sSlm(false)}><Input label="Título" value={lf.title} onChange={e => sLf({ ...lf, title: e.target.value })} /><Select label="Tipo" value={lf.type} onChange={e => sLf({ ...lf, type: e.target.value })} options={[{ value: "video", label: "Vídeo" }, { value: "link", label: "Link" }, { value: "file", label: "Arquivo" }]} /><Input label="URL" value={lf.url} onChange={e => sLf({ ...lf, url: e.target.value })} placeholder="https://..." /><Textarea label="Descrição" value={lf.description} onChange={e => sLf({ ...lf, description: e.target.value })} /><AttEdit atts={lf.attachments || []} onChange={a => sLf({ ...lf, attachments: a })} /><div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 14 }}><Btn variant="secondary" onClick={() => sSlm(false)}>Cancelar</Btn><Btn onClick={savL} disabled={svLd}>{svLd ? "..." : el ? "Salvar" : "Adicionar"}</Btn></div></Modal>}
-      </div>);
-    }
+/* Admin Progress */
+function AProg({sts,mods,prog}){return(<div><h1 style={{color:"#fff",fontSize:24,fontWeight:700,margin:"0 0 6px"}}>Progresso</h1><p style={{color:"#555",fontSize:14,margin:"0 0 22px"}}>Acompanhe seus alunos</p>{sts.length===0?<Empty icon={<I.Users/>} text="Cadastre alunos"/>:<div style={{display:"grid",gap:9}}>{sts.map(s=>{const as2=mods.filter(m=>(s.assignedModules||[]).includes(m.id));const tl2=as2.reduce((a,m)=>a+m.lessons.length,0);const sp=prog[s.id]||{};const dn2=Object.values(sp).filter(Boolean).length;const pc2=tl2>0?Math.round((dn2/tl2)*100):0;return(<div key={s.id} style={{background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:14,padding:"16px 14px"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:10}}><Av name={s.name} size={36}/><div><div style={{color:"#fff",fontWeight:600,fontSize:14}}>{s.name}</div><div style={{color:"#555",fontSize:11}}>{s.email}</div></div></div><div style={{color:"#fff",fontSize:20,fontWeight:700}}>{pc2}%</div></div><div style={{background:"#1a1a1a",borderRadius:6,height:5,overflow:"hidden"}}><div style={{width:`${pc2}%`,height:"100%",background:"#fff",borderRadius:6}}/></div><div style={{color:"#555",fontSize:11,marginTop:5}}>{dn2}/{tl2} aula(s)</div></div>);})}</div>}</div>);}
 
-    /* ═══ Admin Events (TASK 2 FIX: events per student with studentId) ═══ */
-    function AEvts({ evts, sts, ops, tt }) {
-      const [sh, sSh] = useState(false); const [eId, sEId] = useState(null); const [f, sF] = useState({ title: "", date: "", time: "", description: "", studentId: "" }); const [svLd, sSvLd] = useState(false);
-      const save = async () => {
-        if (!f.title || !f.date || !f.time || !f.studentId) { tt("Preencha título, data, horário e aluno", "error"); return; }
-        sSvLd(true);
-        if (eId) {
-          const cur = evts.find(e => e.id === eId);
-          await ops.addUpdate({ ...cur, title: f.title, date: f.date, time: f.time, description: f.description, studentId: f.studentId }); tt("Atualizado!");
-        } else {
-          await ops.addUpdate({ title: f.title, date: f.date, time: f.time, description: f.description, studentId: f.studentId, id: gid() }); tt("Criado!");
-        }
-        sSvLd(false); sSh(false);
-      };
-      const sorted = [...evts].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-      const getStName = (sid) => { const s = sts.find(x => x.id === sid); return s ? s.name : "Aluno removido"; };
-      return (<div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22, flexWrap: "wrap", gap: 10 }}><div><h1 style={{ color: "#fff", fontSize: 24, fontWeight: 700, margin: 0 }}>Eventos</h1><p style={{ color: "#555", fontSize: 14, margin: "2px 0 0" }}>{evts.length} evento(s)</p></div><Btn onClick={() => { sF({ title: "", date: "", time: "", description: "", studentId: sts.length > 0 ? sts[0].id : "" }); sEId(null); sSh(true); }}><I.Plus />Novo</Btn></div>
-        {evts.length === 0 ? <Empty icon={<I.Calendar />} text="Nenhum evento" /> : <div style={{ display: "grid", gap: 7 }}>{sorted.map(ev => (<div key={ev.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px", background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 12, gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}><div style={{ width: 46, height: 46, borderRadius: 11, background: "#1a1a1a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><div style={{ color: "#fff", fontSize: 16, fontWeight: 700, lineHeight: 1 }}>{ev.date ? ev.date.split("-")[2] : "--"}</div><div style={{ color: "#666", fontSize: 10 }}>{ev.date ? months[parseInt(ev.date.split("-")[1]) - 1] : ""}</div></div><div><div style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>{ev.title}</div><div style={{ color: "#555", fontSize: 12, display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}><I.Clock />{ev.time}</div><div style={{ color: "#444", fontSize: 11, marginTop: 2 }}>Aluno: {getStName(ev.studentId)}</div></div></div>
-          <div style={{ display: "flex", gap: 3, flexShrink: 0 }}><Btn variant="ghost" size="sm" onClick={() => { sF({ title: ev.title, date: ev.date, time: ev.time, description: ev.description || "", studentId: ev.studentId || "" }); sEId(ev.id); sSh(true); }}><I.Edit /></Btn><Btn variant="ghost" size="sm" onClick={async () => { await ops.remove(ev.id); tt("Removido"); }} style={{ color: "#ef4444" }}><I.Trash /></Btn></div>
-        </div>))}</div>}
-        {sh && <Modal title={eId ? "Editar Evento" : "Novo Evento"} onClose={() => sSh(false)}>
-          <Input label="Título" value={f.title} onChange={e => sF({ ...f, title: e.target.value })} placeholder="Ex: Aula ao vivo #3" />
-          <Select label="Aluno" value={f.studentId} onChange={e => sF({ ...f, studentId: e.target.value })} options={sts.map(s => ({ value: s.id, label: s.name + " (" + s.email + ")" }))} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}><Input label="Data" type="date" value={f.date} onChange={e => sF({ ...f, date: e.target.value })} /><Input label="Horário" type="time" value={f.time} onChange={e => sF({ ...f, time: e.target.value })} /></div>
-          <Textarea label="Descrição (opcional)" value={f.description} onChange={e => sF({ ...f, description: e.target.value })} />
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 14 }}><Btn variant="secondary" onClick={() => sSh(false)}>Cancelar</Btn><Btn onClick={save} disabled={svLd}>{svLd ? "..." : eId ? "Salvar" : "Criar"}</Btn></div>
-        </Modal>}
-      </div>);
-    }
+/* ── STUDENT PORTAL ── */
+function StudentPortal({user,onLogout}){const mob=useIsMobile();const[tab,sTab]=useState("inicio");const[mods,sMods]=useState([]);const[prog,sProg]=useState({});const[evts,sEvts]=useState([]);const[ok,sOk]=useState(false);
+  useEffect(()=>{const am=ld(SK.MODULES,[]);const ap=ld(SK.PROGRESS,{});const ae=ld(SK.EVENTS,[]);sMods(am.filter(m=>(user.assignedModules||[]).includes(m.id)));sProg(ap[user.id]||{});sEvts(ae.filter(e=>e.studentId===user.id));sOk(true);},[user]);
+  const mark=lid=>{const np={...prog,[lid]:!prog[lid]};sProg(np);const all=ld(SK.PROGRESS,{});all[user.id]=np;sv(SK.PROGRESS,all);};
+  const tl=mods.reduce((a,m)=>a+m.lessons.length,0);const dn=Object.values(prog).filter(Boolean).length;const pc=tl>0?Math.round((dn/tl)*100):0;
+  const nav=[{id:"inicio",l:"Início",Ic:I.Home},{id:"eventos",l:"Eventos",Ic:I.Calendar},{id:"perfil",l:"Perfil",Ic:I.User}];
+  if(!ok)return<div style={{minHeight:"100vh",background:"#000",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{color:"#fff"}}>Carregando...</div></div>;
+  return(<div style={{minHeight:"100vh",background:"#000",display:"flex"}}>
+    {!mob&&<aside style={{width:210,background:"#080808",borderRight:"1px solid #161616",display:"flex",flexDirection:"column",flexShrink:0,position:"sticky",top:0,height:"100vh"}}>
+      <div style={{padding:"18px 14px",display:"flex",alignItems:"center",gap:10}}><Logo size={28}/><div><div style={{color:"#fff",fontWeight:700,fontSize:14}}>Mentoria MVP</div><div style={{color:"#444",fontSize:10}}>Área do Aluno</div></div></div>
+      <div style={{padding:"0 14px 14px"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{color:"#888",fontSize:11}}>Progresso</span><span style={{color:"#fff",fontSize:12,fontWeight:700}}>{pc}%</span></div><div style={{background:"#1a1a1a",borderRadius:6,height:4,overflow:"hidden"}}><div style={{width:`${pc}%`,height:"100%",background:"#fff",borderRadius:6}}/></div></div>
+      <nav style={{flex:1,padding:"0 8px"}}>{nav.map(n=>(<button key={n.id} onClick={()=>sTab(n.id)} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"10px 12px",border:"none",borderRadius:10,marginBottom:2,background:tab===n.id?"#1a1a1a":"transparent",color:tab===n.id?"#fff":"#666",cursor:"pointer",fontSize:13,fontWeight:500,textAlign:"left"}}><n.Ic/>{n.l}</button>))}</nav>
+      <div style={{padding:"12px 8px",borderTop:"1px solid #161616"}}><div style={{display:"flex",alignItems:"center",gap:8,padding:"5px 12px",marginBottom:4}}><Av name={user.name} size={28}/><div><div style={{color:"#fff",fontSize:12,fontWeight:500}}>{user.name}</div><div style={{color:"#555",fontSize:10}}>{user.email}</div></div></div><button onClick={onLogout} style={{display:"flex",alignItems:"center",gap:8,width:"100%",padding:"9px 12px",border:"none",borderRadius:10,background:"transparent",color:"#ef4444",cursor:"pointer",fontSize:13,fontWeight:500}}><I.Logout/>Sair</button></div>
+    </aside>}
+    <main style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",paddingBottom:mob?68:0}}>
+      {tab==="inicio"&&<SInicio mods={mods} prog={prog} mark={mark} pc={pc} dn={dn} tl={tl} user={user} mob={mob}/>}
+      {tab==="eventos"&&<SEventos evts={evts} mob={mob}/>}
+      {tab==="perfil"&&<SPerfil user={user} onLogout={onLogout} pc={pc} dn={dn} tl={tl} mob={mob}/>}
+    </main>
+    {mob&&<nav style={{position:"fixed",bottom:0,left:0,right:0,background:"#080808",borderTop:"1px solid #161616",display:"flex",justifyContent:"space-around",padding:"7px 0",paddingBottom:"calc(7px + env(safe-area-inset-bottom))",zIndex:800}}>{nav.map(n=>(<button key={n.id} onClick={()=>sTab(n.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"none",border:"none",cursor:"pointer",color:tab===n.id?"#fff":"#555",padding:"5px 14px"}}><n.Ic s={22}/><span style={{fontSize:10,fontWeight:600}}>{n.l}</span></button>))}</nav>}
+  </div>);
+}
 
-    /* Admin Progress */
-    function AProg({ sts, mods, prog }) { return (<div><h1 style={{ color: "#fff", fontSize: 24, fontWeight: 700, margin: "0 0 6px" }}>Progresso</h1><p style={{ color: "#555", fontSize: 14, margin: "0 0 22px" }}>Acompanhe seus alunos</p>{sts.length === 0 ? <Empty icon={<I.Users />} text="Cadastre alunos" /> : <div style={{ display: "grid", gap: 9 }}>{sts.map(s => { const as2 = mods.filter(m => (s.assignedModules || []).includes(m.id)); const tl2 = as2.reduce((a, m) => a + m.lessons.length, 0); const sp = prog[s.id] || {}; const dn2 = Object.values(sp).filter(Boolean).length; const pc2 = tl2 > 0 ? Math.round((dn2 / tl2) * 100) : 0; return (<div key={s.id} style={{ background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 14, padding: "16px 14px" }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><Av name={s.name} size={36} /><div><div style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>{s.name}</div><div style={{ color: "#555", fontSize: 11 }}>{s.email}</div></div></div><div style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>{pc2}%</div></div><div style={{ background: "#1a1a1a", borderRadius: 6, height: 5, overflow: "hidden" }}><div style={{ width: `${pc2}%`, height: "100%", background: "#fff", borderRadius: 6 }} /></div><div style={{ color: "#555", fontSize: 11, marginTop: 5 }}>{dn2}/{tl2} aula(s)</div></div>); })}</div>}</div>); }
+/* Student Início */
+function SInicio({mods,prog,mark,pc,dn,tl,user,mob}){const[al,sAl]=useState(null);const[amid,sAmid]=useState(null);const[exp,sExp]=useState(()=>{const e={};mods.forEach(m=>e[m.id]=true);return e;});
+  if(al){const vi=al.type==="video"&&al.url?pvUrl(al.url):null;const md=mods.find(m=>m.id===amid);return(<div style={{flex:1,overflowY:"auto",animation:"fadeIn .2s ease"}}><div style={{padding:mob?"11px 13px":"14px 26px",borderBottom:"1px solid #161616"}}><button onClick={()=>sAl(null)} style={{display:"flex",alignItems:"center",gap:5,background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:13,fontWeight:500,padding:3}}><I.ChevLeft/>Voltar</button></div>{vi&&<VidPlayer info={vi} url={al.url}/>}{al.type==="link"&&al.url&&<div style={{padding:mob?"22px 14px":"28px",background:"#080808",borderBottom:"1px solid #161616",textAlign:"center"}}><a href={al.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 24px",background:"#1a1a1a",border:"1px solid #333",borderRadius:12,color:"#fff",textDecoration:"none",fontSize:14,fontWeight:600}}><I.Link/>Abrir conteúdo</a></div>}{al.type==="file"&&al.url&&<div style={{padding:mob?"22px 14px":"28px",background:"#080808",borderBottom:"1px solid #161616",textAlign:"center"}}><a href={al.url} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 24px",background:"#1a1a1a",border:"1px solid #333",borderRadius:12,color:"#fff",textDecoration:"none",fontSize:14,fontWeight:600}}><I.File/>Baixar arquivo</a></div>}<div style={{padding:mob?"18px 14px":"26px 32px"}}>{md&&<div style={{color:"#555",fontSize:12,fontWeight:500,marginBottom:5}}>{md.title}</div>}<h1 style={{color:"#fff",fontSize:mob?19:23,fontWeight:700,margin:"0 0 10px"}}>{al.title}</h1>{al.description&&<p style={{color:"#888",fontSize:14,lineHeight:1.6,maxWidth:700}}>{al.description}</p>}<AttShow atts={al.attachments}/><div style={{marginTop:18}}><Btn variant={prog[al.id]?"secondary":"primary"} onClick={()=>mark(al.id)}>{prog[al.id]?<><I.Check/>Concluída</>:"Marcar como concluída"}</Btn></div></div></div>);}
+  return(<div style={{flex:1,overflowY:"auto"}}><div style={{padding:mob?"18px 14px":"26px 32px",borderBottom:"1px solid #111"}}><h1 style={{color:"#fff",fontSize:mob?19:23,fontWeight:700,margin:"0 0 3px"}}>Olá, {user.name}</h1><p style={{color:"#555",fontSize:13,margin:"0 0 14px"}}>Continue de onde parou</p><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}><span style={{color:"#888",fontSize:12}}>Progresso</span><span style={{color:"#fff",fontSize:13,fontWeight:700}}>{pc}%</span></div><div style={{background:"#1a1a1a",borderRadius:6,height:5,overflow:"hidden"}}><div style={{width:`${pc}%`,height:"100%",background:"#fff",borderRadius:6}}/></div><div style={{color:"#444",fontSize:11,marginTop:4}}>{dn}/{tl} aulas</div></div><div style={{padding:mob?"14px":"18px 32px"}}>{mods.length===0?<Empty icon={<I.Book/>} text="Nenhum módulo atribuído"/>:<div style={{display:"grid",gap:9}}>{mods.map((m,mi)=>{const md2=m.lessons.filter(l=>prog[l.id]).length;const mp2=m.lessons.length>0?Math.round((md2/m.lessons.length)*100):0;return(<div key={m.id} style={{background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:14,overflow:"hidden"}}><button onClick={()=>sExp(p=>({...p,[m.id]:!p[m.id]}))} style={{display:"flex",alignItems:"center",gap:11,width:"100%",padding:"13px 14px",border:"none",background:"transparent",cursor:"pointer",textAlign:"left"}}><div style={{width:34,height:34,borderRadius:10,background:"#1a1a1a",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:14,flexShrink:0}}>{mi+1}</div><div style={{flex:1,minWidth:0}}><div style={{color:"#fff",fontWeight:600,fontSize:14}}>{m.title}</div><div style={{color:"#555",fontSize:11,marginTop:1}}>{md2}/{m.lessons.length} · {mp2}%</div></div><div style={{color:"#444",transform:exp[m.id]?"rotate(0)":"rotate(-90deg)",transition:"transform .2s"}}><I.ChevDown/></div></button>{exp[m.id]&&<div style={{borderTop:"1px solid #161616",padding:"7px 10px 10px"}}>{m.lessons.map(l=>{const done=prog[l.id];return(<button key={l.id} onClick={()=>{sAl(l);sAmid(m.id);}} style={{display:"flex",alignItems:"center",gap:9,width:"100%",padding:"10px 11px",border:"none",borderRadius:10,marginBottom:2,background:"transparent",cursor:"pointer",textAlign:"left"}}><div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,border:done?"none":"2px solid #333",background:done?"#fff":"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>{done&&<span style={{color:"#000"}}><I.Check s={12}/></span>}</div><span style={{color:done?"#666":"#ccc",fontSize:13,fontWeight:500,textDecoration:done?"line-through":"none",flex:1}}>{l.title}</span><span style={{color:"#333"}}>{l.type==="video"?<I.Video/>:l.type==="link"?<I.Link/>:<I.File/>}</span></button>);})}</div>}</div>);})}</div>}</div></div>);
+}
 
-    /* ═══ STUDENT PORTAL ═══ */
-    function StudentPortal({ user, onLogout }) {
-      const mob = useIsMobile(); const [tab, sTab] = useState("inicio"); const [mods, sMods] = useState([]); const [prog, sProg] = useState({}); const [evts, sEvts] = useState([]); const [ok, sOk] = useState(false);
-      useEffect(() => {
-        (async () => {
-          const [am, ap, ae] = await Promise.all([api.getModules(), api.getProgress(), api.getEvents()]); sMods(am.filter(m => (user.assignedModules || []).includes(m.id))); sProg(ap[user.id] || {});
-          /* TASK 2 FIX: filter events by studentId */
-          sEvts(ae.filter(e => e.studentId === user.id));
-          sOk(true);
-        })();
-      }, [user]);
-      const mark = async lid => { const n = !prog[lid]; sProg({ ...prog, [lid]: n }); await api.saveProgress(user.id, lid, n); };
-      const tl = mods.reduce((a, m) => a + m.lessons.length, 0); const dn = Object.values(prog).filter(Boolean).length; const pc = tl > 0 ? Math.round((dn / tl) * 100) : 0;
-      const nav = [{ id: "inicio", l: "Início", Ic: I.Home }, { id: "eventos", l: "Eventos", Ic: I.Calendar }, { id: "perfil", l: "Perfil", Ic: I.User }];
-      if (!ok) return <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ color: "#fff" }}>Carregando...</div></div>;
-      return (<div style={{ minHeight: "100vh", background: "#000", display: "flex" }}>
-        {!mob && <aside style={{ width: 210, background: "#080808", borderRight: "1px solid #161616", display: "flex", flexDirection: "column", flexShrink: 0, position: "sticky", top: 0, height: "100vh" }}>
-          <div style={{ padding: "18px 14px", display: "flex", alignItems: "center", gap: 10 }}><Logo size={28} /><div><div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>Mentoria MVP</div><div style={{ color: "#444", fontSize: 10 }}>Área do Aluno</div></div></div>
-          <div style={{ padding: "0 14px 14px" }}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}><span style={{ color: "#888", fontSize: 11 }}>Progresso</span><span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>{pc}%</span></div><div style={{ background: "#1a1a1a", borderRadius: 6, height: 4, overflow: "hidden" }}><div style={{ width: `${pc}%`, height: "100%", background: "#fff", borderRadius: 6 }} /></div></div>
-          <nav style={{ flex: 1, padding: "0 8px" }}>{nav.map(n => (<button key={n.id} onClick={() => sTab(n.id)} style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 12px", border: "none", borderRadius: 10, marginBottom: 2, background: tab === n.id ? "#1a1a1a" : "transparent", color: tab === n.id ? "#fff" : "#666", cursor: "pointer", fontSize: 13, fontWeight: 500, textAlign: "left" }}><n.Ic />{n.l}</button>))}</nav>
-          <div style={{ padding: "12px 8px", borderTop: "1px solid #161616" }}><div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 12px", marginBottom: 4 }}><Av name={user.name} size={28} /><div><div style={{ color: "#fff", fontSize: 12, fontWeight: 500 }}>{user.name}</div><div style={{ color: "#555", fontSize: 10 }}>{user.email}</div></div></div><button onClick={onLogout} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", border: "none", borderRadius: 10, background: "transparent", color: "#ef4444", cursor: "pointer", fontSize: 13, fontWeight: 500 }}><I.Logout />Sair</button></div>
-        </aside>}
-        <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", paddingBottom: mob ? 68 : 0 }}>
-          {tab === "inicio" && <SInicio mods={mods} prog={prog} mark={mark} pc={pc} dn={dn} tl={tl} user={user} mob={mob} />}
-          {tab === "eventos" && <SEventos evts={evts} mob={mob} />}
-          {tab === "perfil" && <SPerfil user={user} onLogout={onLogout} pc={pc} dn={dn} tl={tl} mob={mob} />}
-        </main>
-        {mob && <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#080808", borderTop: "1px solid #161616", display: "flex", justifyContent: "space-around", padding: "7px 0", paddingBottom: "calc(7px + env(safe-area-inset-bottom))", zIndex: 800 }}>{nav.map(n => (<button key={n.id} onClick={() => sTab(n.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "none", border: "none", cursor: "pointer", color: tab === n.id ? "#fff" : "#555", padding: "5px 14px" }}><n.Ic s={22} /><span style={{ fontSize: 10, fontWeight: 600 }}>{n.l}</span></button>))}</nav>}
-      </div>);
-    }
+/* Student Eventos */
+function SEventos({evts,mob}){const sorted=[...evts].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));const now=new Date().toISOString().split("T")[0];const up=sorted.filter(e=>e.date>=now);const past=sorted.filter(e=>e.date<now);
+  return(<div style={{flex:1,overflowY:"auto",padding:mob?"18px 14px":"26px 32px"}}><h1 style={{color:"#fff",fontSize:mob?19:23,fontWeight:700,margin:"0 0 3px"}}>Eventos</h1><p style={{color:"#555",fontSize:13,margin:"0 0 20px"}}>Seus eventos e encontros</p>{evts.length===0?<Empty icon={<I.Calendar/>} text="Nenhum evento agendado para você"/>:<div>{up.length>0&&<><h3 style={{color:"#888",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Próximos</h3><div style={{display:"grid",gap:7,marginBottom:24}}>{up.map(ev=><EvCard key={ev.id} ev={ev}/>)}</div></>}{past.length>0&&<><h3 style={{color:"#888",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Anteriores</h3><div style={{display:"grid",gap:7,opacity:.6}}>{past.map(ev=><EvCard key={ev.id} ev={ev}/>)}</div></>}</div>}</div>);
+}
+function EvCard({ev}){const d=ev.date?ev.date.split("-")[2]:"--";const m=ev.date?months[parseInt(ev.date.split("-")[1])-1]:"";return(<div style={{display:"flex",alignItems:"flex-start",gap:12,padding:"14px",background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:14}}><div style={{width:48,height:48,borderRadius:11,background:"#1a1a1a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0}}><div style={{color:"#fff",fontSize:17,fontWeight:700,lineHeight:1}}>{d}</div><div style={{color:"#666",fontSize:10}}>{m}</div></div><div style={{flex:1,minWidth:0}}><div style={{color:"#fff",fontWeight:600,fontSize:15,marginBottom:3}}>{ev.title}</div><div style={{color:"#888",fontSize:12,display:"flex",alignItems:"center",gap:4}}><I.Clock/>{ev.time} · {fmtDate(ev.date)}</div>{ev.description&&<div style={{color:"#555",fontSize:13,marginTop:5,lineHeight:1.5}}>{ev.description}</div>}</div></div>);}
 
-    /* Student Início */
-    function SInicio({ mods, prog, mark, pc, dn, tl, user, mob }) {
-      const [al, sAl] = useState(null); const [amid, sAmid] = useState(null); const [exp, sExp] = useState(() => { const e = {}; mods.forEach(m => e[m.id] = true); return e; });
-      if (al) { const vi = al.type === "video" && al.url ? pvUrl(al.url) : null; const md = mods.find(m => m.id === amid); return (<div style={{ flex: 1, overflowY: "auto", animation: "fadeIn .2s ease" }}><div style={{ padding: mob ? "11px 13px" : "14px 26px", borderBottom: "1px solid #161616" }}><button onClick={() => sAl(null)} style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 13, fontWeight: 500, padding: 3 }}><I.ChevLeft />Voltar</button></div>{vi && <VidPlayer info={vi} url={al.url} />}{al.type === "link" && al.url && <div style={{ padding: mob ? "22px 14px" : "28px", background: "#080808", borderBottom: "1px solid #161616", textAlign: "center" }}><a href={al.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 24px", background: "#1a1a1a", border: "1px solid #333", borderRadius: 12, color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 600 }}><I.Link />Abrir conteúdo</a></div>}{al.type === "file" && al.url && <div style={{ padding: mob ? "22px 14px" : "28px", background: "#080808", borderBottom: "1px solid #161616", textAlign: "center" }}><a href={al.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 24px", background: "#1a1a1a", border: "1px solid #333", borderRadius: 12, color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 600 }}><I.File />Baixar arquivo</a></div>}<div style={{ padding: mob ? "18px 14px" : "26px 32px" }}>{md && <div style={{ color: "#555", fontSize: 12, fontWeight: 500, marginBottom: 5 }}>{md.title}</div>}<h1 style={{ color: "#fff", fontSize: mob ? 19 : 23, fontWeight: 700, margin: "0 0 10px" }}>{al.title}</h1>{al.description && <p style={{ color: "#888", fontSize: 14, lineHeight: 1.6, maxWidth: 700 }}>{al.description}</p>}<AttShow atts={al.attachments} /><div style={{ marginTop: 18 }}><Btn variant={prog[al.id] ? "secondary" : "primary"} onClick={() => mark(al.id)}>{prog[al.id] ? <><I.Check />Concluída</> : "Marcar como concluída"}</Btn></div></div></div>); }
-      return (<div style={{ flex: 1, overflowY: "auto" }}><div style={{ padding: mob ? "18px 14px" : "26px 32px", borderBottom: "1px solid #111" }}><h1 style={{ color: "#fff", fontSize: mob ? 19 : 23, fontWeight: 700, margin: "0 0 3px" }}>Olá, {user.name}</h1><p style={{ color: "#555", fontSize: 13, margin: "0 0 14px" }}>Continue de onde parou</p><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}><span style={{ color: "#888", fontSize: 12 }}>Progresso</span><span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{pc}%</span></div><div style={{ background: "#1a1a1a", borderRadius: 6, height: 5, overflow: "hidden" }}><div style={{ width: `${pc}%`, height: "100%", background: "#fff", borderRadius: 6 }} /></div><div style={{ color: "#444", fontSize: 11, marginTop: 4 }}>{dn}/{tl} aulas</div></div><div style={{ padding: mob ? "14px" : "18px 32px" }}>{mods.length === 0 ? <Empty icon={<I.Book />} text="Nenhum módulo atribuído" /> : <div style={{ display: "grid", gap: 9 }}>{mods.map((m, mi) => { const md2 = m.lessons.filter(l => prog[l.id]).length; const mp2 = m.lessons.length > 0 ? Math.round((md2 / m.lessons.length) * 100) : 0; return (<div key={m.id} style={{ background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 14, overflow: "hidden" }}><button onClick={() => sExp(p => ({ ...p, [m.id]: !p[m.id] }))} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "13px 14px", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}><div style={{ width: 34, height: 34, borderRadius: 10, background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{mi + 1}</div><div style={{ flex: 1, minWidth: 0 }}><div style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>{m.title}</div><div style={{ color: "#555", fontSize: 11, marginTop: 1 }}>{md2}/{m.lessons.length} · {mp2}%</div></div><div style={{ color: "#444", transform: exp[m.id] ? "rotate(0)" : "rotate(-90deg)", transition: "transform .2s" }}><I.ChevDown /></div></button>{exp[m.id] && <div style={{ borderTop: "1px solid #161616", padding: "7px 10px 10px" }}>{m.lessons.map(l => { const done = prog[l.id]; return (<button key={l.id} onClick={() => { sAl(l); sAmid(m.id); }} style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 11px", border: "none", borderRadius: 10, marginBottom: 2, background: "transparent", cursor: "pointer", textAlign: "left" }}><div style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, border: done ? "none" : "2px solid #333", background: done ? "#fff" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>{done && <span style={{ color: "#000" }}><I.Check s={12} /></span>}</div><span style={{ color: done ? "#666" : "#ccc", fontSize: 13, fontWeight: 500, textDecoration: done ? "line-through" : "none", flex: 1 }}>{l.title}</span><span style={{ color: "#333" }}>{l.type === "video" ? <I.Video /> : l.type === "link" ? <I.Link /> : <I.File />}</span></button>); })}</div>}</div>); })}</div>}</div></div>);
-    }
+/* Student Perfil */
+function SPerfil({user,onLogout,pc,dn,tl,mob}){return(<div style={{flex:1,overflowY:"auto",padding:mob?"18px 14px":"26px 32px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+  <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginTop:mob?20:40,marginBottom:28}}>
+    <Av name={user.name} size={80}/>
+    <h2 style={{color:"#fff",fontSize:21,fontWeight:700,marginTop:16,marginBottom:4,textAlign:"center"}}>{user.name}</h2>
+    <p style={{color:"#555",fontSize:14,textAlign:"center"}}>{user.email}</p>
+  </div>
+  <div style={{width:"100%",maxWidth:380}}>
+    <div style={{background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:14,padding:"18px",marginBottom:10}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:7}}><span style={{color:"#888",fontSize:13}}>Progresso</span><span style={{color:"#fff",fontSize:14,fontWeight:700}}>{pc}%</span></div>
+      <div style={{background:"#1a1a1a",borderRadius:6,height:6,overflow:"hidden"}}><div style={{width:`${pc}%`,height:"100%",background:"#fff",borderRadius:6}}/></div>
+      <div style={{color:"#555",fontSize:12,marginTop:7}}>{dn} de {tl} aula(s)</div>
+    </div>
+    <button onClick={onLogout} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:9,width:"100%",padding:"13px",background:"#0a0a0a",border:"1px solid #1a1a1a",borderRadius:14,color:"#ef4444",cursor:"pointer",fontSize:15,fontWeight:600,marginTop:6}}><I.Logout/>Sair da conta</button>
+  </div>
+</div>);}
 
-    /* Student Eventos */
-    function SEventos({ evts, mob }) {
-      const sorted = [...evts].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)); const now = new Date().toISOString().split("T")[0]; const up = sorted.filter(e => e.date >= now); const past = sorted.filter(e => e.date < now);
-      return (<div style={{ flex: 1, overflowY: "auto", padding: mob ? "18px 14px" : "26px 32px" }}><h1 style={{ color: "#fff", fontSize: mob ? 19 : 23, fontWeight: 700, margin: "0 0 3px" }}>Eventos</h1><p style={{ color: "#555", fontSize: 13, margin: "0 0 20px" }}>Seus eventos e encontros</p>{evts.length === 0 ? <Empty icon={<I.Calendar />} text="Nenhum evento agendado para você" /> : <div>{up.length > 0 && <><h3 style={{ color: "#888", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8 }}>Próximos</h3><div style={{ display: "grid", gap: 7, marginBottom: 24 }}>{up.map(ev => <EvCard key={ev.id} ev={ev} />)}</div></>}{past.length > 0 && <><h3 style={{ color: "#888", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8 }}>Anteriores</h3><div style={{ display: "grid", gap: 7, opacity: .6 }}>{past.map(ev => <EvCard key={ev.id} ev={ev} />)}</div></>}</div>}</div>);
-    }
-    function EvCard({ ev }) { const d = ev.date ? ev.date.split("-")[2] : "--"; const m = ev.date ? months[parseInt(ev.date.split("-")[1]) - 1] : ""; return (<div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px", background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 14 }}><div style={{ width: 48, height: 48, borderRadius: 11, background: "#1a1a1a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><div style={{ color: "#fff", fontSize: 17, fontWeight: 700, lineHeight: 1 }}>{d}</div><div style={{ color: "#666", fontSize: 10 }}>{m}</div></div><div style={{ flex: 1, minWidth: 0 }}><div style={{ color: "#fff", fontWeight: 600, fontSize: 15, marginBottom: 3 }}>{ev.title}</div><div style={{ color: "#888", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><I.Clock />{ev.time} · {fmtDate(ev.date)}</div>{ev.description && <div style={{ color: "#555", fontSize: 13, marginTop: 5, lineHeight: 1.5 }}>{ev.description}</div>}</div></div>); }
-
-    /* ═══ Student Perfil (TASK 5 FIX: proper alignment) ═══ */
-    function SPerfil({ user, onLogout, pc, dn, tl, mob }) {
-      return (<div style={{ flex: 1, overflowY: "auto", padding: mob ? "18px 14px" : "26px 32px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: mob ? 20 : 40, marginBottom: 28 }}>
-          <Av name={user.name} size={80} />
-          <h2 style={{ color: "#fff", fontSize: 21, fontWeight: 700, marginTop: 16, marginBottom: 4, textAlign: "center" }}>{user.name}</h2>
-          <p style={{ color: "#555", fontSize: 14, textAlign: "center" }}>{user.email}</p>
-        </div>
-        <div style={{ width: "100%", maxWidth: 380 }}>
-          <div style={{ background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 14, padding: "18px", marginBottom: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}><span style={{ color: "#888", fontSize: 13 }}>Progresso</span><span style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{pc}%</span></div>
-            <div style={{ background: "#1a1a1a", borderRadius: 6, height: 6, overflow: "hidden" }}><div style={{ width: `${pc}%`, height: "100%", background: "#fff", borderRadius: 6 }} /></div>
-            <div style={{ color: "#555", fontSize: 12, marginTop: 7 }}>{dn} de {tl} aula(s)</div>
-          </div>
-          <button onClick={onLogout} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, width: "100%", padding: "13px", background: "#0a0a0a", border: "1px solid #1a1a1a", borderRadius: 14, color: "#ef4444", cursor: "pointer", fontSize: 15, fontWeight: 600, marginTop: 6 }}><I.Logout />Sair da conta</button>
-        </div>
-      </div>);
-    }
-
-    /* ═══ APP ═══ */
-    function App() { const [u, sU] = useState(null); return (<React.Fragment>{!u && <LoginPage onLogin={sU} />}{u?.role === "admin" && <AdminDash user={u} onLogout={() => sU(null)} />}{u?.role === "student" && <StudentPortal user={u} onLogout={() => sU(null)} />}</React.Fragment>); }
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+/* ── APP ── */
+function App(){
+  const[u,sU]=useState(null);
+  const[ready,setReady]=useState(false);
+  useEffect(()=>{loadAll().then(()=>setReady(true)).catch(()=>setReady(true));},[]);
+  if(!ready)return(<div style={{minHeight:"100vh",background:"#000",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14}}><div style={{width:36,height:36,border:"3px solid #222",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/><div style={{color:"#555",fontSize:13}}>Carregando...</div></div>);
+  return(<React.Fragment>{!u&&<LoginPage onLogin={sU}/>}{u?.role==="admin"&&<AdminDash user={u} onLogout={()=>sU(null)}/>}{u?.role==="student"&&<StudentPortal user={u} onLogout={()=>sU(null)}/>}</React.Fragment>);
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
 </body>
-
 </html>
