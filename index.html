@@ -46,7 +46,7 @@ async function loadAll() {
 }
 const SK={STUDENTS:"mentoria_students",MODULES:"mentoria_modules",PROGRESS:"mentoria_progress",ADMIN:"mentoria_admin",EVENTS:"mentoria_events"};
 function ld(k,fb){return _cache[k]!==undefined?_cache[k]:fb;}
-function sv(k,d){_cache[k]=d;SUPA.from("app_data").upsert({key:k,value:d},{onConflict:"key"}).catch(console.error);}
+function sv(k,d,onErr){_cache[k]=d;SUPA.from("app_data").upsert({key:k,value:d}).then(({error})=>{if(error&&onErr)onErr(error.message);else if(error)console.error("Supabase:",error);}).catch(e=>{if(onErr)onErr(e.message);else console.error(e);});}
 const DEFAULT_ADMIN={email:"admin@mentoriamvp.com",password:"admin123"};
 const gid=()=>Math.random().toString(36).substr(2,9);
 
@@ -149,7 +149,7 @@ function LoginPage({onLogin}){const[e,sE]=useState("");const[p,sP]=useState("");
 function AdminDash({user,onLogout}){const mob=useIsMobile();const[tab,sTab]=useState("dash");const[sts,sSts]=useState([]);const[mods,sMods]=useState([]);const[prog,sProg]=useState({});const[evts,sEvts]=useState([]);const[toast,sToast]=useState(null);const[ok,sOk]=useState(false);const[side,sSide]=useState(false);
   useEffect(()=>{sSts(ld(SK.STUDENTS,[]));sMods(ld(SK.MODULES,[]));sProg(ld(SK.PROGRESS,{}));sEvts(ld(SK.EVENTS,[]));sOk(true);},[]);
   const tt=(m,t="success")=>sToast({message:m,type:t});
-  const svSts=s=>{sv(SK.STUDENTS,s);sSts(s);};const svMods=m=>{sv(SK.MODULES,m);sMods(m);};const svEvts=e=>{sv(SK.EVENTS,e);sEvts(e);};
+  const svSts=s=>{sv(SK.STUDENTS,s,m=>tt("Erro ao salvar: "+m,"error"));sSts(s);};const svMods=m=>{sv(SK.MODULES,m,msg=>tt("Erro ao salvar: "+msg,"error"));sMods(m);};const svEvts=e=>{sv(SK.EVENTS,e,msg=>tt("Erro ao salvar: "+msg,"error"));sEvts(e);};
   const tabs=[{id:"dash",l:"Dashboard",i:<I.Home/>},{id:"sts",l:"Alunos",i:<I.Users/>},{id:"mods",l:"Módulos",i:<I.Book/>},{id:"evts",l:"Eventos",i:<I.Calendar/>},{id:"prog",l:"Progresso",i:<I.Chart/>}];
   if(!ok)return<div style={{minHeight:"100vh",background:"#000",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{color:"#fff"}}>Carregando...</div></div>;
   const Side=()=>(<aside style={{width:230,background:"#080808",borderRight:"1px solid #161616",display:"flex",flexDirection:"column",flexShrink:0,height:"100vh",position:mob?"fixed":"sticky",top:0,left:0,zIndex:mob?900:1}}>
@@ -171,7 +171,7 @@ function ADash({sts,mods,prog,evts}){const tl=mods.reduce((a,m)=>a+m.lessons.len
 
 /* Admin Students */
 function ASts({sts,mods,onSave,tt}){const[sh,sSh]=useState(false);const[eId,sEId]=useState(null);const[f,sF]=useState({name:"",email:"",password:"",assignedModules:[]});const[sr,sSr]=useState("");
-  const save=()=>{if(!f.name||!f.email||(!eId&&!f.password)){tt("Preencha campos obrigatórios","error");return;}if(eId){onSave(sts.map(s=>{if(s.id!==eId)return s;const u={...s,name:f.name,email:f.email,assignedModules:f.assignedModules};if(f.password.trim())u.password=f.password;return u;}));tt("Atualizado!");}else{if(sts.some(s=>s.email===f.email)){tt("E-mail já existe","error");return;}onSave([...sts,{...f,id:gid()}]);tt("Cadastrado!");}sSh(false);};
+  const save=()=>{try{if(!f.name.trim()||!f.email.trim()||(!eId&&!f.password.trim())){tt("Preencha nome, e-mail e senha","error");return;}if(eId){onSave(sts.map(s=>{if(s.id!==eId)return s;const u={...s,name:f.name.trim(),email:f.email.trim(),assignedModules:f.assignedModules};if(f.password.trim())u.password=f.password.trim();return u;}));tt("Atualizado!");}else{if(sts.some(s=>s.email.trim().toLowerCase()===f.email.trim().toLowerCase())){tt("E-mail já existe","error");return;}onSave([...sts,{name:f.name.trim(),email:f.email.trim(),password:f.password.trim(),assignedModules:f.assignedModules,id:gid()}]);tt("Cadastrado!");}sSh(false);}catch(e){tt("Erro: "+e.message,"error");console.error(e);}};
   const togM=id=>{const a=f.assignedModules||[];sF({...f,assignedModules:a.includes(id)?a.filter(x=>x!==id):[...a,id]});};
   const fil=sts.filter(s=>s.name.toLowerCase().includes(sr.toLowerCase())||s.email.toLowerCase().includes(sr.toLowerCase()));
   return(<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22,flexWrap:"wrap",gap:10}}><div><h1 style={{color:"#fff",fontSize:24,fontWeight:700,margin:0}}>Alunos</h1><p style={{color:"#555",fontSize:14,margin:"2px 0 0"}}>{sts.length} cadastrado(s)</p></div><Btn onClick={()=>{sF({name:"",email:"",password:"",assignedModules:[]});sEId(null);sSh(true);}}><I.Plus/>Novo</Btn></div>
