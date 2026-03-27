@@ -285,13 +285,62 @@ function SPerfil({user,onLogout,pc,dn,tl,mob}){return(<div style={{flex:1,overfl
   </div>
 </div>);}
 
+/* ── SESSION (Supabase-backed) ── */
+const SESS_COOKIE="mvp_tok";
+const SESS_TTL_DAYS=30;
+const SESS_PREFIX="sess_";
+
+function _setCk(n,v,d){const e=new Date(Date.now()+d*864e5).toUTCString();document.cookie=n+"="+encodeURIComponent(v)+";expires="+e+";path=/;SameSite=Strict";}
+function _getCk(n){return document.cookie.split("; ").reduce((r,v)=>{const i=v.indexOf("=");const k=v.slice(0,i),val=v.slice(i+1);return k===n?decodeURIComponent(val):r;},"");}
+function _delCk(n){document.cookie=n+"=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";}
+
+async function createSession(user){
+  const token=gid()+gid()+gid();
+  const expiresAt=new Date(Date.now()+SESS_TTL_DAYS*864e5).toISOString();
+  await SUPA.from("app_data").upsert({key:SESS_PREFIX+token,value:{...user,expiresAt}}).catch(()=>{});
+  _setCk(SESS_COOKIE,token,SESS_TTL_DAYS);
+  return token;
+}
+
+function restoreSession(){
+  const token=_getCk(SESS_COOKIE);
+  if(!token)return null;
+  const sess=_cache[SESS_PREFIX+token];
+  if(!sess)return null;
+  if(new Date(sess.expiresAt)<new Date()){_delCk(SESS_COOKIE);return null;}
+  return sess;
+}
+
+async function destroySession(){
+  const token=_getCk(SESS_COOKIE);
+  _delCk(SESS_COOKIE);
+  if(token)await SUPA.from("app_data").delete().eq("key",SESS_PREFIX+token).catch(()=>{});
+}
+
 /* ── APP ── */
 function App(){
   const[u,sU]=useState(null);
   const[ready,setReady]=useState(false);
-  useEffect(()=>{loadAll().then(()=>setReady(true)).catch(()=>setReady(true));},[]);
+  useEffect(()=>{
+    loadAll().then(()=>{
+      const sess=restoreSession();
+      if(sess){
+        if(sess.role==="admin"){
+          const adm=ld(SK.ADMIN,DEFAULT_ADMIN);
+          if(sess.email===adm.email)sU(sess);else destroySession();
+        }else if(sess.role==="student"){
+          const sts=ld(SK.STUDENTS,[]);
+          const still=sts.find(s=>s.id===sess.id&&s.email===sess.email);
+          if(still)sU({role:"student",...still});else destroySession();
+        }else{destroySession();}
+      }
+      setReady(true);
+    }).catch(()=>setReady(true));
+  },[]);
+  const login=(user)=>{sU(user);createSession(user);};
+  const logout=async()=>{sU(null);await destroySession();};
   if(!ready)return(<div style={{minHeight:"100vh",background:"#000",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}><Logo size={100}/><div style={{width:28,height:28,border:"2px solid #222",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/></div>);
-  return(<React.Fragment>{!u&&<LoginPage onLogin={sU}/>}{u?.role==="admin"&&<AdminDash user={u} onLogout={()=>sU(null)}/>}{u?.role==="student"&&<StudentPortal user={u} onLogout={()=>sU(null)}/>}</React.Fragment>);
+  return(<React.Fragment>{!u&&<LoginPage onLogin={login}/>}{u?.role==="admin"&&<AdminDash user={u} onLogout={logout}/>}{u?.role==="student"&&<StudentPortal user={u} onLogout={logout}/>}</React.Fragment>);
 }
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
