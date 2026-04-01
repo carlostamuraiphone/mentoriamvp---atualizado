@@ -351,12 +351,7 @@ function SInicio({user, mods, prog, evts, mats, onTab, onOpenMod, toast}){
   const curPct = currentMod ? (safeProg[currentMod.id]||85) : 85;
   const curTitle = (currentMod && currentMod.title) ? currentMod.title : "Estratégias de Escala";
 
-  const displayMods = safeMods.length>0 ? safeMods.slice(0,4) : [
-    {id:"dm1",title:"Fundamentos do Design",lessons:12,desc:"A base sólida para criar interfaces que convertem."},
-    {id:"dm2",title:"Estratégias de Escala",lessons:8,desc:"Como levar seu produto para o próximo nível."},
-    {id:"dm3",title:"Marketing Digital",lessons:10,desc:"Estratégias de marketing para escalar."},
-    {id:"dm4",title:"Growth Hacking",lessons:6,desc:"Técnicas de crescimento acelerado."},
-  ];
+  const displayMods = safeMods.slice(0,4);
 
   const displayEvts = safeEvts.length>0 ? safeEvts.slice(0,2) : [
     {id:"de1",title:"Psicologia do Consumidor aplicada ao UI",etype:"recorded",time:"45 min · Ontem"},
@@ -693,11 +688,7 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
   };
   const safeMods = arr(mods);
   const safeProg = obj(prog);
-  const display = safeMods.length>0 ? safeMods : [
-    {id:"dm1",title:"Fundamentos do Design",lessons:12,desc:"A base sólida para criar interfaces.",duration:"4h"},
-    {id:"dm2",title:"Estratégias de Escala",lessons:8,desc:"Como levar seu produto para o próximo nível.",duration:"3h"},
-    {id:"dm3",title:"Marketing Digital Avançado",lessons:10,desc:"Dominar os canais digitais para escalar vendas.",duration:"5h",locked:true},
-  ];
+  const display = safeMods;
   var totalL = display.reduce(function(a,m){return a+(m.lessons||8);},0) || 18;
   var doneL = display.filter(function(m){return (safeProg[m.id]||0)>=100;}).reduce(function(a,m){return a+(m.lessons||8);},0) || 0;
   var overallPct = totalL>0 ? Math.round((doneL/totalL)*100) : 35;
@@ -723,6 +714,13 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
         </div>
       </section>
       <div className="space-y-8">
+        {display.length===0 && (
+          <div className="text-center py-20 text-zinc-400">
+            <span className="material-symbols-outlined text-5xl mb-4 block">play_circle</span>
+            <p className="text-sm font-bold">Nenhuma aula disponível ainda.</p>
+            <p className="text-xs mt-1">As aulas aparecerão aqui assim que forem publicadas.</p>
+          </div>
+        )}
         {display.map(function(mod, idx){
           var p = safeProg[mod.id] || 0;
           var done = p>=100, locked = !!mod.locked && p===0, active = !done && !locked && p>0, untouched = !done && !locked && p===0;
