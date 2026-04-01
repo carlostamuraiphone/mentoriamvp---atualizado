@@ -689,8 +689,8 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
   const safeMods = arr(mods);
   const safeProg = obj(prog);
   const display = safeMods;
-  var totalL = display.reduce(function(a,m){return a+(m.lessons||8);},0) || 18;
-  var doneL = display.filter(function(m){return (safeProg[m.id]||0)>=100;}).reduce(function(a,m){return a+(m.lessons||8);},0) || 0;
+  var totalL = display.length || 1;
+  var doneL = display.filter(function(m){return (safeProg[m.id]||0)>=100;}).length;
   var overallPct = totalL>0 ? Math.round((doneL/totalL)*100) : 35;
   return(
     <main className="ml-0 md:ml-64 pt-20 pb-24 md:pb-16 px-4 md:px-10 min-h-screen fade-in">
@@ -709,7 +709,7 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
             <div className="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
               <div className="h-full bg-black transition-all duration-1000" style={{width: overallPct + "%"}}></div>
             </div>
-            <p className="text-[10px] text-zinc-400 font-bold tracking-widest uppercase">{doneL + " DE " + totalL + " AULAS CONCLUÍDAS"}</p>
+            <p className="text-[10px] text-zinc-400 font-bold tracking-widest uppercase">{doneL + " DE " + display.length + " AULAS CONCLUÍDAS"}</p>
           </div>
         </div>
       </section>
@@ -767,13 +767,13 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
                   {active && (
                     <p className="text-zinc-500 text-sm mb-4 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-black" style={{display:"inline-block",animation:"pulse 2s infinite"}}></span>
-                      {"Continue: Aula " + (Math.ceil((p/100)*(mod.lessons||8))||2)}
+                      {"Em andamento"}
                     </p>
                   )}
                   <div className="flex flex-wrap items-center gap-6 text-zinc-400 text-xs font-bold uppercase tracking-widest">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[18px]">play_circle</span>
-                      <span className="text-zinc-500">{(mod.lessons||8) + " aulas"}</span>
+                      <span className="text-zinc-500">{mod.duration||""}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[18px]">schedule</span>
