@@ -622,9 +622,9 @@ function LessonPlayer({mod, onClose, onComplete}){
         </button>
       </div>
       {/* Player */}
-      <div className="flex-1 flex items-center justify-center p-3 md:p-10">
+      <div className="flex-1 flex items-center justify-center p-2 md:p-6 min-h-0 overflow-hidden">
         <div className="w-full max-w-5xl rounded-xl overflow-hidden shadow-2xl bg-black"
-          style={{aspectRatio:"16/9",maxHeight:"calc(100vh - 140px)"}}>
+          style={{aspectRatio:"16/9",maxHeight:"calc(100vh - 260px)"}}>
           {embedUrl
             ? <iframe src={embedUrl} title={mod.title} frameBorder="0" width="100%" height="100%"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -685,6 +685,10 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
   var markDone = function(modId){
     onProgChange && onProgChange(modId, 100);
     toast("Aula marcada como concluída!");
+  };
+  var markUndone = function(modId){
+    onProgChange && onProgChange(modId, 0);
+    toast("Conclusão desfeita.");
   };
   const safeMods = arr(mods);
   const safeProg = obj(prog);
@@ -775,12 +779,6 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
                       <span className="material-symbols-outlined text-[18px]">schedule</span>
                       <span className="text-zinc-500">{mod.duration||""}</span>
                     </div>
-                    {done && (
-                      <button onClick={function(){setOpenMod(mod);}}
-                        className="ml-auto flex items-center gap-2 text-black font-black border-b border-black pb-1 hover:text-zinc-600 transition-all">
-                        Revisar conteúdo<span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                      </button>
-                    )}
                     {locked && (
                       <div className="flex items-center gap-2 text-zinc-400">
                         <span className="material-symbols-outlined text-[18px]">lock</span>
@@ -821,6 +819,20 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
                         className="px-5 py-2.5 border border-zinc-200 text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black hover:text-white hover:border-black transition-all flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm">check_circle</span>
                         Concluído
+                      </button>
+                    </div>
+                  )}
+                  {done && (
+                    <div className="flex items-center gap-3 mt-6 flex-wrap">
+                      <button onClick={function(){setOpenMod(mod);}}
+                        className="px-5 py-2.5 bg-zinc-100 text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black hover:text-white transition-all flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">play_arrow</span>
+                        Revisar Aula
+                      </button>
+                      <button onClick={function(){markUndone(mod.id);}}
+                        className="px-5 py-2.5 border border-zinc-200 text-zinc-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:border-zinc-400 hover:text-black transition-all flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">undo</span>
+                        Desfazer Conclusão
                       </button>
                     </div>
                   )}
