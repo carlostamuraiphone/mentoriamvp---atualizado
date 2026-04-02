@@ -246,12 +246,7 @@ function TopBar({userName, onProfile, title, onMenu}){
         <button className="md:hidden p-2 -ml-1 text-black hover:bg-zinc-100 rounded-lg transition-colors" onClick={onMenu}>
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <div className="hidden md:flex items-center gap-4 bg-[#f6f3f2] px-4 py-2 rounded-full w-80">
-          <span className="material-symbols-outlined text-zinc-400 text-sm">search</span>
-          <input className="bg-transparent border-none text-sm font-body tracking-wide w-full placeholder:text-zinc-400 outline-none"
-            placeholder={"Buscar em " + (title||"Dashboard") + "..."} type="text"/>
-        </div>
-        <span className="md:hidden text-base font-headline font-black tracking-tighter text-black">{title||"Dashboard"}</span>
+        <span className="text-base font-headline font-black tracking-tighter text-black">{title||"Dashboard"}</span>
       </div>
       <div className="flex items-center gap-3 md:gap-6">
         <button onClick={onProfile} className="flex items-center gap-2 md:gap-3 cursor-pointer">
@@ -771,6 +766,9 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
                     {"Aula " + String(idx+1).padStart(2,"0")}
                   </span>
                   <h3 className={"font-headline font-black tracking-tighter mb-2 " + (active?"text-3xl":"text-2xl group-hover:text-zinc-600 transition-colors")}>{mod.title}</h3>
+                  {mod.desc && !active && (
+                    <p className="text-zinc-500 text-sm mb-3 leading-relaxed">{mod.desc}</p>
+                  )}
                   {active && (
                     <p className="text-zinc-500 text-sm mb-4 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-black" style={{display:"inline-block",animation:"pulse 2s infinite"}}></span>
@@ -832,7 +830,7 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
                         <span className="material-symbols-outlined text-sm">play_arrow</span>
                         Revisar Aula
                       </button>
-                      <button onClick={function(){markUndone(mod.id);}}
+                      <button onClick={function(){if(window.confirm("Desfazer a conclusão desta aula?"))markUndone(mod.id);}}
                         className="px-5 py-2.5 border border-zinc-200 text-zinc-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:border-zinc-400 hover:text-black transition-all flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm">undo</span>
                         Desfazer Conclusão
@@ -1300,6 +1298,20 @@ function AdminDash({user, onLogout}){
     if(!window.confirm("Tem certeza que deseja remover este material?"))return;
     var u=mats.filter(function(m){return m.id!==id;});setMats(u);sv(SK.MATERIALS,u);toast("Material removido");
   };
+  var moveModUp=function(id){
+    var list=mods.slice();
+    var i=list.findIndex(function(m){return m.id===id;});
+    if(i<=0)return;
+    var tmp=list[i-1];list[i-1]=list[i];list[i]=tmp;
+    setMods(list);sv(SK.MODULES,list);
+  };
+  var moveModDown=function(id){
+    var list=mods.slice();
+    var i=list.findIndex(function(m){return m.id===id;});
+    if(i<0||i>=list.length-1)return;
+    var tmp=list[i+1];list[i+1]=list[i];list[i]=tmp;
+    setMods(list);sv(SK.MODULES,list);
+  };
   var saveSt=function(){
     if(!editSt.email){toast("E-mail obrigatório");return;}
     var u=sts.map(function(s){return s.id===editSt.id?Object.assign({},s,editSt):s;});
@@ -1496,7 +1508,7 @@ function AdminDash({user, onLogout}){
             ) : (
               <>
                 <div className="flex items-center gap-4 mb-6">
-                  <button onClick={function(){setModStudentView(null);setNewMod({title:"",desc:"",lessons:8,duration:"3h",link:"",coverImage:"",locked:false,studentId:""}); }}
+                  <button onClick={function(){setModStudentView(null);setNewMod({title:"",desc:"",duration:"",link:"",coverImage:"",studentId:""}); }}
                     className="flex items-center gap-2 text-zinc-500 hover:text-black transition-colors text-sm font-bold">
                     <span className="material-symbols-outlined text-base">arrow_back</span>Todos os Alunos
                   </button>
@@ -1513,6 +1525,10 @@ function AdminDash({user, onLogout}){
                     <input className={inp} placeholder="Descrição" value={newMod.desc} onChange={function(e){setNewMod(function(v){return Object.assign({},v,{desc:e.target.value});});}}/>
                     <input className={inp} placeholder="Duração (ex: 1h30)" value={newMod.duration} onChange={function(e){setNewMod(function(v){return Object.assign({},v,{duration:e.target.value});});}}/>
                     <input className={inp+" md:col-span-2"} placeholder="Link do vídeo (ex: https://youtu.be/...)" type="url" value={newMod.link} onChange={function(e){setNewMod(function(v){return Object.assign({},v,{link:e.target.value});});}}/>
+                    <label className="flex items-center gap-3 cursor-pointer select-none md:col-span-2">
+                      <input type="checkbox" checked={!!newMod.locked} onChange={function(e){setNewMod(function(v){return Object.assign({},v,{locked:e.target.checked});});}} className="w-4 h-4 rounded accent-black"/>
+                      <span className="text-sm font-bold text-zinc-600">Aula bloqueada <span className="font-medium text-zinc-400">(aluno não consegue acessar)</span></span>
+                    </label>
                     {/* Cover image upload */}
                     <div className="md:col-span-2">
                       <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Imagem de Capa</p>
@@ -1566,8 +1582,9 @@ function AdminDash({user, onLogout}){
                 </div>
                 <div className="space-y-3">
                   {mods.filter(function(m){return m.studentId===modStudentView.id;}).length===0 && <p className="text-zinc-400 text-sm py-8 text-center">Nenhuma aula cadastrada para este aluno.</p>}
-                  {mods.filter(function(m){return m.studentId===modStudentView.id;}).map(function(mod,idx){
+                  {mods.filter(function(m){return m.studentId===modStudentView.id;}).map(function(mod,idx,arr){
                     var isEditingMod = editMod && editMod.id===mod.id;
+                    var isFirst = idx===0, isLast = idx===arr.length-1;
                     return(
                       <div key={mod.id} className="bg-white rounded-xl p-5 shadow-sm border border-zinc-100">
                         <div className="flex items-center justify-between gap-4">
@@ -1578,11 +1595,15 @@ function AdminDash({user, onLogout}){
                             }
                             <div>
                               <p className="text-sm font-black text-black">{mod.title}</p>
-                              <p className="text-xs text-zinc-400 font-bold">{mod.duration+(mod.lessons?" · "+mod.lessons+" parte(s)":"")+(mod.locked?" · Bloqueada":"")}</p>
+                              <p className="text-xs text-zinc-400 font-bold">{mod.duration||(mod.locked?" · Bloqueada":"")}</p>
                               {mod.link&&<p className="text-xs text-zinc-300 truncate max-w-xs mt-0.5">{mod.link}</p>}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <div className="flex flex-col mr-1">
+                              <button onClick={function(){moveModUp(mod.id);}} disabled={isFirst} className={"p-1 transition-colors rounded " + (isFirst?"text-zinc-200 cursor-not-allowed":"text-zinc-400 hover:text-black")} title="Mover para cima"><span className="material-symbols-outlined text-sm">arrow_upward</span></button>
+                              <button onClick={function(){moveModDown(mod.id);}} disabled={isLast} className={"p-1 transition-colors rounded " + (isLast?"text-zinc-200 cursor-not-allowed":"text-zinc-400 hover:text-black")} title="Mover para baixo"><span className="material-symbols-outlined text-sm">arrow_downward</span></button>
+                            </div>
                             <button onClick={function(){setEditMod(isEditingMod?null:Object.assign({},mod));setEditModCover(null);setEditModCoverPreview("");}} className="p-2 text-zinc-400 hover:text-black transition-colors"><span className="material-symbols-outlined text-sm">{isEditingMod?"close":"edit"}</span></button>
                             <button onClick={function(){delMod(mod.id);}} className="p-2 text-zinc-400 hover:text-[#ba1a1a] transition-colors flex-shrink-0"><span className="material-symbols-outlined text-sm">delete</span></button>
                           </div>
@@ -1594,6 +1615,10 @@ function AdminDash({user, onLogout}){
                               <input className={inp} placeholder="Descrição" value={editMod.desc||""} onChange={function(e){setEditMod(function(v){return Object.assign({},v,{desc:e.target.value});});}}/>
                               <input className={inp} placeholder="Duração (ex: 1h30)" value={editMod.duration||""} onChange={function(e){setEditMod(function(v){return Object.assign({},v,{duration:e.target.value});});}}/>
                               <input className={inp} placeholder="Link do vídeo (ex: https://youtu.be/...)" type="url" value={editMod.link||""} onChange={function(e){setEditMod(function(v){return Object.assign({},v,{link:e.target.value});});}}/>
+                              <label className="flex items-center gap-3 cursor-pointer select-none md:col-span-2">
+                                <input type="checkbox" checked={!!editMod.locked} onChange={function(e){setEditMod(function(v){return Object.assign({},v,{locked:e.target.checked});});}} className="w-4 h-4 rounded accent-black"/>
+                                <span className="text-sm font-bold text-zinc-600">Aula bloqueada <span className="font-medium text-zinc-400">(aluno não consegue acessar)</span></span>
+                              </label>
                               <div className="md:col-span-2">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Imagem de Capa</p>
                                 <div className="flex items-center gap-4 flex-wrap">
@@ -1866,7 +1891,6 @@ function StudentPortal({user, onLogout}){
     if(uid){ fullProg[uid]=newProg; } else { fullProg=newProg; }
     sv(SK.PROGRESS,fullProg);
   };
-  var phs={inicio:"Buscar aulas, materiais...",modulos:"Buscar aulas...",eventos:"Buscar eventos...",materiais:"Buscar materiais...",perfil:"Pesquisar..."};
   var tabLabels={inicio:"Início",modulos:"Aulas",eventos:"Eventos",materiais:"Materiais",perfil:"Perfil"};
   var userName=(user&&(user.name||(user.email?user.email.split("@")[0]:"")))||"Aluno";
   return(
