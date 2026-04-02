@@ -343,20 +343,17 @@ function SInicio({user, mods, prog, evts, mats, onTab, onOpenMod, toast}){
   const safeMods = arr(mods);
   const safeProg = obj(prog);
   const safeEvts = arr(evts);
-  const totalMods = safeMods.length || 6;
+  const totalMods = safeMods.length;
   const doneMods = safeMods.filter(function(m){ return (safeProg[m.id]||0)>=100; }).length;
-  const overallPct = Math.round((doneMods/totalMods)*100) || 0;
+  const overallPct = totalMods>0 ? Math.round((doneMods/totalMods)*100) : 0;
 
-  const currentMod = safeMods.find(function(m){ var p=safeProg[m.id]||0; return p>0&&p<100; }) || safeMods[1];
-  const curPct = currentMod ? (safeProg[currentMod.id]||85) : 85;
-  const curTitle = (currentMod && currentMod.title) ? currentMod.title : "Estratégias de Escala";
+  const currentMod = safeMods.find(function(m){ var p=safeProg[m.id]||0; return p>0&&p<100; }) || safeMods[0] || null;
+  const curPct = currentMod ? (safeProg[currentMod.id]||0) : 0;
+  const curTitle = (currentMod && currentMod.title) ? currentMod.title : "";
 
   const displayMods = safeMods.slice(0,4);
 
-  const displayEvts = safeEvts.length>0 ? safeEvts.slice(0,2) : [
-    {id:"de1",title:"Psicologia do Consumidor aplicada ao UI",etype:"recorded",time:"45 min · Ontem"},
-    {id:"de2",title:"Sessão de Q&A: Mentoria MVP",etype:"live",time:"Live · 14:00 · Hoje"},
-  ];
+  const displayEvts = safeEvts.slice(0,2);
 
   const userName = (user && (user.name || (user.email ? user.email.split("@")[0] : ""))) || "Aluno";
 
@@ -402,15 +399,17 @@ function SInicio({user, mods, prog, evts, mats, onTab, onOpenMod, toast}){
                 Ver Aulas
               </button>
             </div>
-            <div className="w-full">
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{"Aula Atual: " + curTitle}</span>
-                <span className="text-xs text-white font-bold">{curPct + "%"}</span>
+            {curTitle && (
+              <div className="w-full">
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{"Aula Atual: " + curTitle}</span>
+                  <span className="text-xs text-white font-bold">{curPct + "%"}</span>
+                </div>
+                <div className="w-full h-[2px] bg-zinc-800">
+                  <div className="h-full bg-white" style={{width: curPct + "%"}}></div>
+                </div>
               </div>
-              <div className="w-full h-[2px] bg-zinc-800">
-                <div className="h-full bg-white" style={{width: curPct + "%"}}></div>
-              </div>
-            </div>
+            )}
           </div>
           <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-zinc-800/30 rounded-full blur-[100px]"></div>
         </div>
@@ -492,29 +491,32 @@ function SInicio({user, mods, prog, evts, mats, onTab, onOpenMod, toast}){
           <div className="mt-12">
             <h4 className="text-2xl font-headline font-black tracking-tight mb-8">Aulas Recentes &amp; Próximos Eventos</h4>
             <div className="space-y-4">
-              {displayEvts.map(function(evt, idx){
-                var evtTitle = evt.title || "Evento";
-                var evtTime = evt.time ? evt.date + " · " + evt.time : (evt.date || "Em breve");
-                var evtType = evt.etype || evt.type || "Evento";
-                return(
-                  <div key={evt.id || idx} className="flex items-center justify-between p-5 rounded-xl border bg-white border-surface-container-low group hover:shadow-md transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-12 rounded-lg flex-shrink-0 overflow-hidden bg-zinc-100 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-zinc-400 text-xl">event</span>
+              {displayEvts.length===0
+                ? <p className="text-sm text-zinc-400 font-bold py-4">Nenhum evento programado no momento.</p>
+                : displayEvts.map(function(evt, idx){
+                    var evtTitle = evt.title || "Evento";
+                    var evtTime = evt.time ? evt.date + " · " + evt.time : (evt.date || "Em breve");
+                    var evtType = evt.etype || evt.type || "Evento";
+                    return(
+                      <div key={evt.id || idx} className="flex items-center justify-between p-5 rounded-xl border bg-white border-surface-container-low group hover:shadow-md transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-12 rounded-lg flex-shrink-0 overflow-hidden bg-zinc-100 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-zinc-400 text-xl">event</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-0.5 block">{evtType}</span>
+                            <h6 className="text-sm font-black text-black leading-tight">{evtTitle}</h6>
+                            <p className="text-[10px] font-bold uppercase mt-0.5 tracking-widest text-zinc-400">{evtTime}</p>
+                          </div>
+                        </div>
+                        <button onClick={function(){onTab("eventos");}}
+                          className="px-5 py-2 text-xs font-black rounded-lg transition-all bg-surface-container-low group-hover:bg-black group-hover:text-white flex-shrink-0">
+                          Ver
+                        </button>
                       </div>
-                      <div>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-0.5 block">{evtType}</span>
-                        <h6 className="text-sm font-black text-black leading-tight">{evtTitle}</h6>
-                        <p className="text-[10px] font-bold uppercase mt-0.5 tracking-widest text-zinc-400">{evtTime}</p>
-                      </div>
-                    </div>
-                    <button onClick={function(){onTab("eventos");}}
-                      className="px-5 py-2 text-xs font-black rounded-lg transition-all bg-surface-container-low group-hover:bg-black group-hover:text-white flex-shrink-0">
-                      Ver
-                    </button>
-                  </div>
-                );
-              })}
+                    );
+                  })
+              }
             </div>
           </div>
         </div>
@@ -630,13 +632,14 @@ function LessonPlayer({mod, onClose, onComplete}){
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen style={{display:"block",width:"100%",height:"100%"}}></iframe>
             : <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500">
-                <span className="material-symbols-outlined text-5xl mb-4">link_off</span>
-                {mod.coverImage && <img src={mod.coverImage} alt={mod.title} className="w-full h-full object-cover rounded-xl" onError={function(e){e.target.style.display="none";}}/>}
-                {!mod.coverImage && <>
-                  <span className="material-symbols-outlined text-5xl mb-4">link_off</span>
-                  <p className="text-sm font-bold">Link não configurado para esta aula.</p>
-                  <p className="text-xs mt-2 text-zinc-600">Acesse o painel admin → Aulas e adicione o link.</p>
-                </>}
+                {mod.coverImage
+                  ? <img src={mod.coverImage} alt={mod.title} className="w-full h-full object-cover rounded-xl" onError={function(e){e.target.style.display="none";}}/>
+                  : <>
+                      <span className="material-symbols-outlined text-5xl mb-4">link_off</span>
+                      <p className="text-sm font-bold">Link não configurado para esta aula.</p>
+                      <p className="text-xs mt-2 text-zinc-600">Acesse o painel admin → Aulas e adicione o link.</p>
+                    </>
+                }
               </div>
           }
         </div>
@@ -693,9 +696,9 @@ function SModulos({mods, prog, toast, openMod, onOpenMod, onProgChange}){
   const safeMods = arr(mods);
   const safeProg = obj(prog);
   const display = safeMods;
-  var totalL = display.length || 1;
+  var totalL = display.length;
   var doneL = display.filter(function(m){return (safeProg[m.id]||0)>=100;}).length;
-  var overallPct = totalL>0 ? Math.round((doneL/totalL)*100) : 35;
+  var overallPct = totalL>0 ? Math.round((doneL/totalL)*100) : 0;
   return(
     <main className="ml-0 md:ml-64 pt-20 pb-24 md:pb-16 px-4 md:px-10 min-h-screen fade-in">
       <section className="mb-16">
