@@ -969,7 +969,7 @@ function SMateriais({mats, toast}){
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-zinc-400">
             <span className="material-symbols-outlined text-5xl mb-4 block">folder_open</span>
-            <p className="text-sm font-bold">{safeMats.length === 0 ? "Nenhum material disponível ainda." : "Nenhum material nessa categoria."}</p>
+            <p className="text-sm font-bold">{safeMats.length === 0 ? "Não há material disponível no momento." : "Nenhum material nessa categoria."}</p>
           </div>
         ) : filtered.map(function(mat){
           return(
@@ -1203,8 +1203,8 @@ function AdminDash({user, onLogout}){
   const [coverImgPreview,setCoverImgPreview]=useState("");
   const [newModMat,setNewModMat]=useState({name:"",type:"PDF",link:""});
   const [modMatFile,setModMatFile]=useState(null);
-  const [newEvt,setNewEvt]=useState({title:"",date:"",time:"",etype:"Evento",mentor:"",linkInscricao:""});
-  const [newMat,setNewMat]=useState({name:"",type:"PDF",link:""});
+  const [newEvt,setNewEvt]=useState({title:"",date:"",time:"",etype:"Evento",mentor:"",linkInscricao:"",studentIds:[]});
+  const [newMat,setNewMat]=useState({name:"",type:"PDF",link:"",studentId:""});
   const [newMatFile,setNewMatFile]=useState(null);
   const [uploading,setUploading]=useState(false);
   const [editSt,setEditSt]=useState(null);
@@ -1214,6 +1214,7 @@ function AdminDash({user, onLogout}){
   const [editEvt,setEditEvt]=useState(null);
   const [editMat,setEditMat]=useState(null);
   const [editMatFile,setEditMatFile]=useState(null);
+  const [matStudentView,setMatStudentView]=useState(null);
   var addSt=function(){
     if(!newSt.email||!newSt.password){toast("Preencha e-mail e senha");return;}
     if(newSt.password.length<6){toast("A senha deve ter pelo menos 6 caracteres");return;}
@@ -1235,7 +1236,7 @@ function AdminDash({user, onLogout}){
         catch(e){ toast("Erro ao enviar imagem: "+e.message+". Crie o bucket 'mentoria' no Supabase Storage → Settings → Storage."); setUploading(false); return; }
       }
       if(newModMat.name){
-        var matEntry={name:newModMat.name,type:newModMat.type,link:newModMat.link,lessonId:modData.id,lessonTitle:modData.title};
+        var matEntry={name:newModMat.name,type:newModMat.type,link:newModMat.link,lessonId:modData.id,lessonTitle:modData.title,studentId:sid};
         if(newModMat.type!=="Link"&&modMatFile){
           try{ matEntry.link=await uploadToStorage(modMatFile,"materials"); matEntry.fileName=modMatFile.name; }
           catch(e){ toast("Erro ao enviar material: "+e.message+". Crie o bucket 'mentoria' no Supabase Storage."); setUploading(false); return; }
@@ -1269,7 +1270,7 @@ function AdminDash({user, onLogout}){
   var addEvt=function(){
     if(!newEvt.title){toast("Digite o título do evento");return;}
     var u=evts.concat([Object.assign({},newEvt,{id:Date.now().toString()})]);
-    setEvts(u);sv(SK.EVENTS,u);setNewEvt({title:"",date:"",time:"",etype:"Evento",mentor:"",linkInscricao:""});toast("Evento adicionado!");
+    setEvts(u);sv(SK.EVENTS,u);setNewEvt({title:"",date:"",time:"",etype:"Evento",mentor:"",linkInscricao:"",studentIds:[]});toast("Evento adicionado!");
   };
   var delEvt=function(id){
     if(!window.confirm("Tem certeza que deseja remover este evento?"))return;
@@ -1282,14 +1283,14 @@ function AdminDash({user, onLogout}){
     setUploading(true);
     try{
       var icon=newMat.type==="Link"?"link":newMat.type==="XLSX"?"table_chart":"description";
-      var matData=Object.assign({},newMat,{id:Date.now().toString(),icon:icon});
+      var matData=Object.assign({},newMat,{id:Date.now().toString(),icon:icon,studentId:matStudentView?matStudentView.id:""});
       if(newMat.type!=="Link"&&newMatFile){
         try{ matData.link=await uploadToStorage(newMatFile,"materials"); matData.fileName=newMatFile.name; }
         catch(e){ toast("Erro ao enviar arquivo: "+e.message+". Crie o bucket 'mentoria' no Supabase Storage."); setUploading(false); return; }
       }
       var u=mats.concat([matData]);
       setMats(u); sv(SK.MATERIALS,u);
-      setNewMat({name:"",type:"PDF",link:""}); setNewMatFile(null);
+      setNewMat({name:"",type:"PDF",link:"",studentId:""}); setNewMatFile(null);
       toast("Material adicionado!");
     }catch(e){ toast("Erro: "+e.message); }
     setUploading(false);
@@ -1691,6 +1692,29 @@ function AdminDash({user, onLogout}){
                 <input className={inp} placeholder="Horário (ex: 19:00 · Brasília)" value={newEvt.time||""} onChange={function(e){setNewEvt(function(v){return Object.assign({},v,{time:e.target.value});});}}/>
                 <input className={inp} placeholder="Nome do Mentor" value={newEvt.mentor} onChange={function(e){setNewEvt(function(v){return Object.assign({},v,{mentor:e.target.value});});}}/>
                 <input className={inp} placeholder="Link de inscrição ou acesso (URL)" type="url" value={newEvt.linkInscricao||""} onChange={function(e){setNewEvt(function(v){return Object.assign({},v,{linkInscricao:e.target.value});});}}/>
+                <div className="md:col-span-2 pt-4 mt-2 border-t border-zinc-100">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">Alunos que poderão ver este evento <span className="normal-case font-medium text-zinc-300">(deixe em branco para nenhum)</span></p>
+                  {sts.length===0
+                    ? <p className="text-xs text-zinc-400 italic">Nenhum aluno cadastrado. Cadastre alunos primeiro.</p>
+                    : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        {sts.map(function(st){
+                          var checked=arr(newEvt.studentIds).indexOf(st.id)!==-1;
+                          return(
+                            <label key={st.id} className={"flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors select-none "+(checked?"border-black bg-zinc-50":"border-zinc-100 hover:border-zinc-300")}>
+                              <input type="checkbox" checked={checked} onChange={function(e){
+                                var ids=arr(newEvt.studentIds);
+                                setNewEvt(function(v){return Object.assign({},v,{studentIds:e.target.checked?ids.concat([st.id]):ids.filter(function(id){return id!==st.id;})});});
+                              }} className="w-4 h-4 accent-black flex-shrink-0"/>
+                              <div className="min-w-0">
+                                <p className="text-xs font-black text-black truncate">{st.name||"Sem nome"}</p>
+                                <p className="text-[10px] text-zinc-400 truncate">{st.email}</p>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                  }
+                </div>
               </div>
               <button onClick={addEvt} className={btnAdd}>Adicionar Evento</button>
             </div>
@@ -1698,15 +1722,25 @@ function AdminDash({user, onLogout}){
               {evts.length===0 && <p className="text-zinc-400 text-sm py-8 text-center">Nenhum evento cadastrado.</p>}
               {evts.map(function(evt){
                 var isEditingEvt = editEvt && editEvt.id===evt.id;
+                var assignedNames=(arr(evt.studentIds).length>0)
+                  ? arr(evt.studentIds).map(function(sid){var s=sts.find(function(st){return st.id===sid;});return s?(s.name||s.email):"?";}).join(", ")
+                  : null;
                 return(
                   <div key={evt.id} className="bg-white rounded-xl p-6 shadow-sm border border-zinc-100">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center"><span className="material-symbols-outlined text-white text-sm">event</span></div>
-                        <div><p className="text-sm font-black text-black">{evt.title}</p><p className="text-xs text-zinc-400 font-bold">{(evt.etype||evt.type||"")+" · "+evt.date+(evt.time?" · "+evt.time:"")+(evt.mentor?" · "+evt.mentor:"")}</p></div>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center flex-shrink-0"><span className="material-symbols-outlined text-white text-sm">event</span></div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-black">{evt.title}</p>
+                          <p className="text-xs text-zinc-400 font-bold">{(evt.etype||evt.type||"")+" · "+evt.date+(evt.time?" · "+evt.time:"")+(evt.mentor?" · "+evt.mentor:"")}</p>
+                          {assignedNames
+                            ? <p className="text-[10px] text-green-700 font-bold mt-0.5 flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">person</span>{"Alunos: "+assignedNames}</p>
+                            : <p className="text-[10px] text-zinc-300 font-bold mt-0.5">Nenhum aluno vinculado</p>
+                          }
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={function(){setEditEvt(isEditingEvt?null:Object.assign({},evt));}} className="p-2 text-zinc-400 hover:text-black transition-colors"><span className="material-symbols-outlined text-sm">{isEditingEvt?"close":"edit"}</span></button>
+                        <button onClick={function(){setEditEvt(isEditingEvt?null:Object.assign({},evt,{studentIds:arr(evt.studentIds)}));}} className="p-2 text-zinc-400 hover:text-black transition-colors"><span className="material-symbols-outlined text-sm">{isEditingEvt?"close":"edit"}</span></button>
                         <button onClick={function(){delEvt(evt.id);}} className="p-2 text-zinc-400 hover:text-[#ba1a1a] transition-colors"><span className="material-symbols-outlined text-sm">delete</span></button>
                       </div>
                     </div>
@@ -1719,6 +1753,29 @@ function AdminDash({user, onLogout}){
                           <input className={inp} placeholder="Horário (ex: 19:00 · Brasília)" value={editEvt.time||""} onChange={function(e){setEditEvt(function(v){return Object.assign({},v,{time:e.target.value});});}}/>
                           <input className={inp} placeholder="Nome do Mentor" value={editEvt.mentor||""} onChange={function(e){setEditEvt(function(v){return Object.assign({},v,{mentor:e.target.value});});}}/>
                           <input className={inp} placeholder="Link de inscrição ou acesso (URL)" type="url" value={editEvt.linkInscricao||""} onChange={function(e){setEditEvt(function(v){return Object.assign({},v,{linkInscricao:e.target.value});});}}/>
+                          <div className="md:col-span-2 pt-4 mt-2 border-t border-zinc-200">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">Alunos que poderão ver este evento</p>
+                            {sts.length===0
+                              ? <p className="text-xs text-zinc-400 italic">Nenhum aluno cadastrado.</p>
+                              : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                  {sts.map(function(st){
+                                    var checked=arr(editEvt.studentIds).indexOf(st.id)!==-1;
+                                    return(
+                                      <label key={st.id} className={"flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors select-none "+(checked?"border-black bg-white":"border-zinc-200 hover:border-zinc-400")}>
+                                        <input type="checkbox" checked={checked} onChange={function(e){
+                                          var ids=arr(editEvt.studentIds);
+                                          setEditEvt(function(v){return Object.assign({},v,{studentIds:e.target.checked?ids.concat([st.id]):ids.filter(function(id){return id!==st.id;})});});
+                                        }} className="w-4 h-4 accent-black flex-shrink-0"/>
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-black text-black truncate">{st.name||"Sem nome"}</p>
+                                          <p className="text-[10px] text-zinc-400 truncate">{st.email}</p>
+                                        </div>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                            }
+                          </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <button onClick={saveEvt} className="px-4 py-2 bg-black text-white text-xs font-black rounded-xl hover:bg-zinc-800 transition-all">Salvar</button>
@@ -1764,89 +1821,134 @@ function AdminDash({user, onLogout}){
         {tab==="mats" && (
           <div>
             <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-zinc-400 mb-2 block">Gerenciamento</span>
-            <h2 className="text-2xl md:text-4xl font-headline font-black tracking-tighter text-black mb-8 md:mb-12">Materiais de Apoio</h2>
-            <div className="bg-white rounded-xl p-8 shadow-sm border border-zinc-100 mb-8">
-              <h3 className="text-sm font-black uppercase tracking-widest mb-6">Adicionar Material</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <input className={inp} placeholder="Nome do material" value={newMat.name} onChange={function(e){setNewMat(function(v){return Object.assign({},v,{name:e.target.value});});}}/>
-                <select className={inp} value={newMat.type} onChange={function(e){setNewMat(function(v){return Object.assign({},v,{type:e.target.value,link:""});}); setNewMatFile(null);}}>
-                  <option value="PDF">PDF</option>
-                  <option value="XLSX">Planilha (XLSX)</option>
-                  <option value="DOC">Documento (DOC)</option>
-                  <option value="ZIP">Arquivo ZIP</option>
-                  <option value="Link">Link Externo</option>
-                </select>
-                {newMat.type==="Link"
-                  ? <input className={inp+" md:col-span-2"} placeholder="Cole o link do material (URL)" type="url" value={newMat.link} onChange={function(e){setNewMat(function(v){return Object.assign({},v,{link:e.target.value});});}}/>
-                  : <label className="md:col-span-2 flex items-center gap-4 cursor-pointer px-6 py-4 border-2 border-dashed border-zinc-200 rounded-xl hover:border-black transition-colors">
-                      <span className="material-symbols-outlined text-zinc-400 text-2xl">upload_file</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-zinc-700 truncate">{newMatFile ? newMatFile.name : "Clique para selecionar arquivo"}</p>
-                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">{newMatFile ? "Arquivo selecionado" : "PDF, XLSX, DOC, ZIP..."}</p>
-                      </div>
-                      {newMatFile && <button type="button" onClick={function(e){e.preventDefault();setNewMatFile(null);}} className="text-zinc-400 hover:text-[#ba1a1a] flex-shrink-0 transition-colors"><span className="material-symbols-outlined text-sm">close</span></button>}
-                      <input type="file" className="sr-only" onChange={function(e){setNewMatFile(e.target.files[0]||null); e.target.value="";}}/>
-                    </label>
-                }
-              </div>
-              <button onClick={addMat} disabled={uploading} className={btnAdd+(uploading?" opacity-60 cursor-not-allowed":"")}>
-                {uploading ? <span className="flex items-center gap-2"><span className="material-symbols-outlined text-sm" style={{animation:"spin 1s linear infinite"}}>progress_activity</span>Enviando...</span> : "Adicionar Material"}
-              </button>
-            </div>
-            <div className="space-y-3">
-              {mats.length===0 && <p className="text-zinc-400 text-sm py-8 text-center">Nenhum material cadastrado.</p>}
-              {mats.map(function(mat){
-                var isEditingMat = editMat && editMat.id===mat.id;
-                return(
-                  <div key={mat.id} className="bg-white rounded-xl p-6 shadow-sm border border-zinc-100">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center">
-                          <span className="material-symbols-outlined text-zinc-400 text-sm">{mat.icon||"description"}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-black">{mat.name}</p>
-                          <p className="text-xs text-zinc-400 font-bold">{mat.type+(mat.size?" · "+mat.size:"")+(mat.ref?" · Ref: "+mat.ref:"")}</p>
-                          {mat.link && <p className="text-xs text-zinc-300 truncate max-w-sm mt-0.5">{mat.link}</p>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={function(){setEditMat(isEditingMat?null:Object.assign({},mat));setEditMatFile(null);}} className="p-2 text-zinc-400 hover:text-black transition-colors"><span className="material-symbols-outlined text-sm">{isEditingMat?"close":"edit"}</span></button>
-                        <button onClick={function(){delMat(mat.id);}} className="p-2 text-zinc-400 hover:text-[#ba1a1a] transition-colors"><span className="material-symbols-outlined text-sm">delete</span></button>
-                      </div>
-                    </div>
-                    {isEditingMat && (
-                      <div className="mt-4 p-6 bg-[#f6f3f2] rounded-xl space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <input className={inp} placeholder="Nome do material" value={editMat.name||""} onChange={function(e){setEditMat(function(v){return Object.assign({},v,{name:e.target.value});});}}/>
-                          <select className={inp} value={editMat.type||"PDF"} onChange={function(e){setEditMat(function(v){return Object.assign({},v,{type:e.target.value});}); setEditMatFile(null);}}>
-                            <option value="PDF">PDF</option>
-                            <option value="XLSX">Planilha (XLSX)</option>
-                            <option value="DOC">Documento (DOC)</option>
-                            <option value="ZIP">Arquivo ZIP</option>
-                            <option value="Link">Link Externo</option>
-                          </select>
-                          {editMat.type==="Link"
-                            ? <input className={inp+" md:col-span-2"} placeholder="Cole o link do material (URL)" type="url" value={editMat.link||""} onChange={function(e){setEditMat(function(v){return Object.assign({},v,{link:e.target.value});});}}/>
-                            : <label className="md:col-span-2 flex items-center gap-3 cursor-pointer px-5 py-3 border-2 border-dashed border-zinc-200 rounded-xl hover:border-black transition-colors">
-                                <span className="material-symbols-outlined text-zinc-400">upload_file</span>
-                                <span className="text-sm font-bold text-zinc-500 truncate">{editMatFile ? editMatFile.name : (mat.fileName||"Selecionar novo arquivo...")}</span>
-                                <input type="file" className="sr-only" onChange={function(e){setEditMatFile(e.target.files[0]||null); e.target.value="";}}/>
-                              </label>
-                          }
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <button onClick={saveMat} disabled={uploading} className={"px-4 py-2 bg-black text-white text-xs font-black rounded-xl hover:bg-zinc-800 transition-all"+(uploading?" opacity-60 cursor-not-allowed":"")}>
-                            {uploading ? <span className="flex items-center gap-2"><span className="material-symbols-outlined text-sm" style={{animation:"spin 1s linear infinite"}}>progress_activity</span>Salvando...</span> : "Salvar"}
+            {!matStudentView ? (
+              <>
+                <h2 className="text-2xl md:text-4xl font-headline font-black tracking-tighter text-black mb-3">Materiais de Apoio</h2>
+                <p className="text-zinc-500 text-sm mb-8">Selecione um aluno para gerenciar os materiais dele.</p>
+                {sts.length===0
+                  ? <div className="text-center py-16 text-zinc-400 bg-white rounded-xl border border-zinc-100"><span className="material-symbols-outlined text-4xl mb-3 block">group</span><p className="text-sm font-bold">Nenhum aluno cadastrado ainda.</p><p className="text-xs mt-1">Vá para a aba Alunos e cadastre primeiro.</p></div>
+                  : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {sts.map(function(st){
+                        var stMats=mats.filter(function(m){return m.studentId===st.id;});
+                        return(
+                          <button key={st.id} onClick={function(){setMatStudentView(st);setNewMat({name:"",type:"PDF",link:"",studentId:st.id});}}
+                            className="bg-white rounded-xl p-6 shadow-sm border border-zinc-100 hover:border-black hover:shadow-md transition-all text-left group">
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                                <span className="material-symbols-outlined text-zinc-400 group-hover:text-white">person</span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-black text-black">{st.name||"Sem nome"}</p>
+                                <p className="text-xs text-zinc-400 font-bold truncate">{st.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-zinc-400 font-bold">{stMats.length===0?"Nenhum material":stMats.length===1?"1 material":stMats.length+" materiais"}</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-black flex items-center gap-1">Gerenciar<span className="material-symbols-outlined text-sm">arrow_forward</span></span>
+                            </div>
                           </button>
-                          <button onClick={function(){setEditMat(null);setEditMatFile(null);}} className="p-2 text-zinc-400 hover:text-black transition-colors"><span className="material-symbols-outlined text-sm">close</span></button>
-                        </div>
-                      </div>
-                    )}
+                        );
+                      })}
+                    </div>
+                }
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-4 mb-6">
+                  <button onClick={function(){setMatStudentView(null);setNewMat({name:"",type:"PDF",link:"",studentId:""});setNewMatFile(null);setEditMat(null);setEditMatFile(null);}}
+                    className="flex items-center gap-2 text-zinc-500 hover:text-black transition-colors text-sm font-bold">
+                    <span className="material-symbols-outlined text-base">arrow_back</span>Todos os Alunos
+                  </button>
+                  <span className="text-zinc-300">|</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-zinc-100 rounded-full flex items-center justify-center"><span className="material-symbols-outlined text-zinc-400 text-sm">person</span></div>
+                    <h2 className="text-lg md:text-2xl font-headline font-black tracking-tighter text-black">{"Materiais de " + (matStudentView.name||matStudentView.email)}</h2>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+                <div className="bg-white rounded-xl p-8 shadow-sm border border-zinc-100 mb-8">
+                  <h3 className="text-sm font-black uppercase tracking-widest mb-6">Adicionar Material</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <input className={inp} placeholder="Nome do material" value={newMat.name} onChange={function(e){setNewMat(function(v){return Object.assign({},v,{name:e.target.value});});}}/>
+                    <select className={inp} value={newMat.type} onChange={function(e){setNewMat(function(v){return Object.assign({},v,{type:e.target.value,link:""});}); setNewMatFile(null);}}>
+                      <option value="PDF">PDF</option>
+                      <option value="XLSX">Planilha (XLSX)</option>
+                      <option value="DOC">Documento (DOC)</option>
+                      <option value="ZIP">Arquivo ZIP</option>
+                      <option value="Link">Link Externo</option>
+                    </select>
+                    {newMat.type==="Link"
+                      ? <input className={inp+" md:col-span-2"} placeholder="Cole o link do material (URL)" type="url" value={newMat.link} onChange={function(e){setNewMat(function(v){return Object.assign({},v,{link:e.target.value});});}}/>
+                      : <label className="md:col-span-2 flex items-center gap-4 cursor-pointer px-6 py-4 border-2 border-dashed border-zinc-200 rounded-xl hover:border-black transition-colors">
+                          <span className="material-symbols-outlined text-zinc-400 text-2xl">upload_file</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-zinc-700 truncate">{newMatFile ? newMatFile.name : "Clique para selecionar arquivo"}</p>
+                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">{newMatFile ? "Arquivo selecionado" : "PDF, XLSX, DOC, ZIP..."}</p>
+                          </div>
+                          {newMatFile && <button type="button" onClick={function(e){e.preventDefault();setNewMatFile(null);}} className="text-zinc-400 hover:text-[#ba1a1a] flex-shrink-0 transition-colors"><span className="material-symbols-outlined text-sm">close</span></button>}
+                          <input type="file" className="sr-only" onChange={function(e){setNewMatFile(e.target.files[0]||null); e.target.value="";}}/>
+                        </label>
+                    }
+                  </div>
+                  <button onClick={addMat} disabled={uploading} className={btnAdd+(uploading?" opacity-60 cursor-not-allowed":"")}>
+                    {uploading ? <span className="flex items-center gap-2"><span className="material-symbols-outlined text-sm" style={{animation:"spin 1s linear infinite"}}>progress_activity</span>Enviando...</span> : "Adicionar Material"}
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {mats.filter(function(m){return m.studentId===matStudentView.id;}).length===0 && <p className="text-zinc-400 text-sm py-8 text-center">Nenhum material cadastrado para este aluno.</p>}
+                  {mats.filter(function(m){return m.studentId===matStudentView.id;}).map(function(mat){
+                    var isEditingMat = editMat && editMat.id===mat.id;
+                    return(
+                      <div key={mat.id} className="bg-white rounded-xl p-6 shadow-sm border border-zinc-100">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="w-10 h-10 bg-zinc-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <span className="material-symbols-outlined text-zinc-400 text-sm">{mat.icon||"description"}</span>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-black text-black">{mat.name}</p>
+                              <p className="text-xs text-zinc-400 font-bold">{mat.type+(mat.size?" · "+mat.size:"")+(mat.ref?" · Ref: "+mat.ref:"")}</p>
+                              {mat.link && <p className="text-xs text-zinc-300 truncate max-w-sm mt-0.5">{mat.link}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button onClick={function(){setEditMat(isEditingMat?null:Object.assign({},mat));setEditMatFile(null);}} className="p-2 text-zinc-400 hover:text-black transition-colors"><span className="material-symbols-outlined text-sm">{isEditingMat?"close":"edit"}</span></button>
+                            <button onClick={function(){delMat(mat.id);}} className="p-2 text-zinc-400 hover:text-[#ba1a1a] transition-colors"><span className="material-symbols-outlined text-sm">delete</span></button>
+                          </div>
+                        </div>
+                        {isEditingMat && (
+                          <div className="mt-4 p-6 bg-[#f6f3f2] rounded-xl space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <input className={inp} placeholder="Nome do material" value={editMat.name||""} onChange={function(e){setEditMat(function(v){return Object.assign({},v,{name:e.target.value});});}}/>
+                              <select className={inp} value={editMat.type||"PDF"} onChange={function(e){setEditMat(function(v){return Object.assign({},v,{type:e.target.value});}); setEditMatFile(null);}}>
+                                <option value="PDF">PDF</option>
+                                <option value="XLSX">Planilha (XLSX)</option>
+                                <option value="DOC">Documento (DOC)</option>
+                                <option value="ZIP">Arquivo ZIP</option>
+                                <option value="Link">Link Externo</option>
+                              </select>
+                              {editMat.type==="Link"
+                                ? <input className={inp+" md:col-span-2"} placeholder="Cole o link do material (URL)" type="url" value={editMat.link||""} onChange={function(e){setEditMat(function(v){return Object.assign({},v,{link:e.target.value});});}}/>
+                                : <label className="md:col-span-2 flex items-center gap-3 cursor-pointer px-5 py-3 border-2 border-dashed border-zinc-200 rounded-xl hover:border-black transition-colors">
+                                    <span className="material-symbols-outlined text-zinc-400">upload_file</span>
+                                    <span className="text-sm font-bold text-zinc-500 truncate">{editMatFile ? editMatFile.name : (mat.fileName||"Selecionar novo arquivo...")}</span>
+                                    <input type="file" className="sr-only" onChange={function(e){setEditMatFile(e.target.files[0]||null); e.target.value="";}}/>
+                                  </label>
+                              }
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button onClick={saveMat} disabled={uploading} className={"px-4 py-2 bg-black text-white text-xs font-black rounded-xl hover:bg-zinc-800 transition-all"+(uploading?" opacity-60 cursor-not-allowed":"")}>
+                                {uploading ? <span className="flex items-center gap-2"><span className="material-symbols-outlined text-sm" style={{animation:"spin 1s linear infinite"}}>progress_activity</span>Salvando...</span> : "Salvar"}
+                              </button>
+                              <button onClick={function(){setEditMat(null);setEditMatFile(null);}} className="p-2 text-zinc-400 hover:text-black transition-colors"><span className="material-symbols-outlined text-sm">close</span></button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
       </main>
@@ -1878,9 +1980,9 @@ function StudentPortal({user, onLogout}){
       var userProg=(uid&&safeProg[uid]&&typeof safeProg[uid]==="object")?safeProg[uid]:safeProg;
       setProg(userProg||{});
       var rawEvts=ld(SK.EVENTS,[]);
-      setEvts(Array.isArray(rawEvts)?rawEvts:[]);
+      setEvts(Array.isArray(rawEvts)?rawEvts.filter(function(e){return !e.studentIds||e.studentIds.length===0||e.studentIds.indexOf(uid)!==-1;}):[]);
       var rawMats=ld(SK.MATERIALS,[]);
-      setMats(Array.isArray(rawMats)?rawMats:[]);
+      setMats(Array.isArray(rawMats)?rawMats.filter(function(m){return !m.studentId||m.studentId===uid;}):[]);
     }catch(e){console.error("StudentPortal useEffect error:",e);}
   },[]);
   var saveProg=function(modId, pct){
